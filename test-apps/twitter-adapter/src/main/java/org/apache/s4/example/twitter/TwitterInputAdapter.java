@@ -36,6 +36,7 @@ import twitter4j.TwitterStream;
 import twitter4j.TwitterStreamFactory;
 import twitter4j.conf.ConfigurationBuilder;
 
+
 public class TwitterInputAdapter extends AdapterApp {
 
     private static Logger logger = LoggerFactory.getLogger(TwitterInputAdapter.class);
@@ -112,7 +113,7 @@ public class TwitterInputAdapter extends AdapterApp {
     protected void onStart() {
         try {
             t.start();
-            connectAndRead();
+            //connectAndRead();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -124,10 +125,30 @@ public class TwitterInputAdapter extends AdapterApp {
         public void run() {
             while (true) {
                 try {
-                    Status status = messageQueue.take();
+                    //Status status = messageQueue.take();
                     Event event = new Event();
-                    event.put("statusText", String.class, status.getText());
+                    event.put("statusText", String.class, "#Obama0 and #Mao are friends.");
                     getRemoteStream().put(event);
+                    event.put("statusText", String.class, "#Obama1 and #Mao are friends.");
+                    getRemoteStream().put(event);
+                    event.put("statusText", String.class, "#Obama2 and #Mao are friends.");
+                    getRemoteStream().put(event);
+                    event.put("statusText", String.class, "#Obama3 and #Mao are friends.");
+                    getRemoteStream().put(event);
+                    event.put("statusText", String.class, "#Obama4 and #Mao are friends.");
+                    getRemoteStream().put(event);
+                    event.put("statusText", String.class, "#Obama5 and #Mao are friends.");
+                    getRemoteStream().put(event);
+                    event.put("statusText", String.class, "#Obama6 and #Mao are friends.");
+                    getRemoteStream().put(event);
+                    event.put("statusText", String.class, "#Obama7 and #Mao are friends.");
+                    getRemoteStream().put(event);
+                    event.put("statusText", String.class, "#Obama8 and #Mao are friends.");
+                    getRemoteStream().put(event);
+                    event.put("statusText", String.class, "#Obama9 and #Mao are friends.");
+                    getRemoteStream().put(event);
+                    Thread.sleep(1000);
+                    logger.debug("Just sent a group.");
                 } catch (Exception e) {
 
                 }

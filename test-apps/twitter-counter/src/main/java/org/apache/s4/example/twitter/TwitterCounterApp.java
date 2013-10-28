@@ -52,6 +52,7 @@ public class TwitterCounterApp extends App {
             // we checkpoint this PE every 20s
             topNTopicPE.setCheckpointingConfig(new CheckpointingConfig.Builder(CheckpointingMode.TIME).frequency(20)
                     .timeUnit(TimeUnit.SECONDS).build());
+            /*
             @SuppressWarnings("unchecked")
             Stream<TopicEvent> aggregatedTopicStream = createStream("AggregatedTopicSeen", new KeyFinder<TopicEvent>() {
 
@@ -60,6 +61,16 @@ public class TwitterCounterApp extends App {
                     return ImmutableList.of("aggregationKey");
                 }
             }, topNTopicPE);
+            */
+            //Modified by Xing. Try to change Stream to RemoteStream
+            RemoteStream aggregatedTopicStream = createOutputStream("AggregatedTopicSeen", new KeyFinder<TopicEvent>() {
+
+                @Override
+                public List<String> get(final TopicEvent arg0) {
+                    return ImmutableList.of("aggregationKey");
+                }
+            });
+            createInputStream("AggregatedTopicSeen", topNTopicPE);
 
             TopicCountAndReportPE topicCountAndReportPE = createPE(TopicCountAndReportPE.class);
             topicCountAndReportPE.setDownstream(aggregatedTopicStream);
