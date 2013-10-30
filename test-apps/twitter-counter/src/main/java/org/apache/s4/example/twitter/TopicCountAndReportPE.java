@@ -20,15 +20,17 @@ package org.apache.s4.example.twitter;
 
 import org.apache.s4.core.App;
 import org.apache.s4.core.ProcessingElement;
-import org.apache.s4.core.Stream;
+import org.apache.s4.core.RemoteStream;
+//import org.apache.s4.core.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 // keyed by topic name
 public class TopicCountAndReportPE extends ProcessingElement {
 
-    transient Stream<TopicEvent> downStream;
-    transient int threshold = 10;
+    transient RemoteStream downStream;
+    //transient Stream<TopicEvent> downStream;
+    transient int threshold = 1;
     int count;
     boolean firstEvent = true;
 
@@ -42,8 +44,12 @@ public class TopicCountAndReportPE extends ProcessingElement {
         super(app);
     }
 
-    public void setDownstream(Stream<TopicEvent> aggregatedTopicStream) {
+    public void setDownstream(RemoteStream aggregatedTopicStream) {
         this.downStream = aggregatedTopicStream;
+    }
+    
+    public RemoteStream getDownstream() {
+        return downStream;
     }
 
     public void onEvent(TopicEvent event) {
@@ -68,6 +74,7 @@ public class TopicCountAndReportPE extends ProcessingElement {
         // topicSeenEvent.put("topic", String.class, getId());
         // topicSeenEvent.put("count", Integer.class, count);
         // topicSeenEvent.put("aggregationKey", String.class, "aggregationValue");
+        logger.debug("put event to stream ([{}]). ", downStream.getName());
         downStream.put(new TopicEvent(getId(), count));
     }
 

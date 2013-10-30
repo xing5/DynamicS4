@@ -35,7 +35,7 @@ import twitter4j.StatusListener;
 import twitter4j.TwitterStream;
 import twitter4j.TwitterStreamFactory;
 import twitter4j.conf.ConfigurationBuilder;
-
+import twitter4j.StallWarning;
 
 public class TwitterInputAdapter extends AdapterApp {
 
@@ -67,14 +67,17 @@ public class TwitterInputAdapter extends AdapterApp {
         File twitter4jPropsFile = new File(System.getProperty("user.home") + "/twitter4j.properties");
         if (!twitter4jPropsFile.exists()) {
             logger.error(
-                    "Cannot find twitter4j.properties file in this location :[{}]. Make sure it is available at this place and includes user/password credentials",
+                    "Cannot find twitter4j.properties file in this location :[{}]. Make sure it is available at this place and includes oauth credentials",
                     twitter4jPropsFile.getAbsolutePath());
             return;
         }
         twitterProperties.load(new FileInputStream(twitter4jPropsFile));
 
-        cb.setDebugEnabled(Boolean.valueOf(twitterProperties.getProperty("debug")))
-                .setUser(twitterProperties.getProperty("user")).setPassword(twitterProperties.getProperty("password"));
+        cb.setDebugEnabled(false)
+                .setOAuthConsumerKey(twitterProperties.getProperty("oauth.consumerKey"))
+                .setOAuthConsumerSecret(twitterProperties.getProperty("oauth.consumerSecret"))
+                .setOAuthAccessToken(twitterProperties.getProperty("oauth.accessToken"))
+                .setOAuthAccessTokenSecret(twitterProperties.getProperty("oauth.accessTokenSecret"));
         TwitterStream twitterStream = new TwitterStreamFactory(cb.build()).getInstance();
         StatusListener statusListener = new StatusListener() {
 
@@ -98,7 +101,12 @@ public class TwitterInputAdapter extends AdapterApp {
             public void onScrubGeo(long userId, long upToStatusId) {
                 logger.error("error");
             }
-
+            
+            @Override
+            public void onStallWarning(StallWarning arg0) {
+                logger.error("error");
+            }
+            
             @Override
             public void onDeletionNotice(StatusDeletionNotice statusDeletionNotice) {
                 logger.error("error");
@@ -113,7 +121,7 @@ public class TwitterInputAdapter extends AdapterApp {
     protected void onStart() {
         try {
             t.start();
-            //connectAndRead();
+            connectAndRead();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -125,30 +133,12 @@ public class TwitterInputAdapter extends AdapterApp {
         public void run() {
             while (true) {
                 try {
-                    //Status status = messageQueue.take();
+                    Status status = messageQueue.take();
                     Event event = new Event();
-                    event.put("statusText", String.class, "#Obama0 and #Mao are friends.");
+                    event.put("statusText", String.class, status.getText());//"#woailuo haha");
+                    //Thread.sleep(1000);
                     getRemoteStream().put(event);
-                    event.put("statusText", String.class, "#Obama1 and #Mao are friends.");
-                    getRemoteStream().put(event);
-                    event.put("statusText", String.class, "#Obama2 and #Mao are friends.");
-                    getRemoteStream().put(event);
-                    event.put("statusText", String.class, "#Obama3 and #Mao are friends.");
-                    getRemoteStream().put(event);
-                    event.put("statusText", String.class, "#Obama4 and #Mao are friends.");
-                    getRemoteStream().put(event);
-                    event.put("statusText", String.class, "#Obama5 and #Mao are friends.");
-                    getRemoteStream().put(event);
-                    event.put("statusText", String.class, "#Obama6 and #Mao are friends.");
-                    getRemoteStream().put(event);
-                    event.put("statusText", String.class, "#Obama7 and #Mao are friends.");
-                    getRemoteStream().put(event);
-                    event.put("statusText", String.class, "#Obama8 and #Mao are friends.");
-                    getRemoteStream().put(event);
-                    event.put("statusText", String.class, "#Obama9 and #Mao are friends.");
-                    getRemoteStream().put(event);
-                    Thread.sleep(1000);
-                    logger.debug("Just sent a group.");
+                    //logger.debug("Just sent a event.");
                 } catch (Exception e) {
 
                 }

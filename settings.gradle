@@ -28,6 +28,7 @@ include 's4-benchmarks'
 include ':test-apps:simple-deployable-app-1'
 include ':test-apps:producer-app'
 include ':test-apps:consumer-app'
+//include ':test-apps:twitter-adapter'
 
 rootProject.name = 's4'
 rootProject.children.each {project ->

@@ -247,12 +247,14 @@ public class TCPEmitter implements Emitter, ClusterChangeListener {
 
     @Override
     public void onChange() {
+        logger.debug("cluster change!!!!!!! emitter refresh!!!!!!");
         refreshCluster();
     }
 
     private void refreshCluster() {
         lock.lock();
         try {
+            logger.debug("refresh " + this.topology + ". {} by " + this, this.topology.getPhysicalCluster().getNodes());
             for (ClusterNode clusterNode : topology.getPhysicalCluster().getNodes()) {
                 Integer partition = clusterNode.getPartition();
                 if (partition == null) {

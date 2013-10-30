@@ -67,6 +67,7 @@ public class ClusterFromZK implements Cluster, IZkChildListener, IZkDataListener
         this.processPath = "/s4/clusters/" + clusterName + "/process";
         lock = new ReentrantLock();
         this.zkClient = zkClient;
+        logger.trace("new local cluster {}", zkClient.toString());
         zkClient.subscribeStateChanges(this);
         if (!zkClient.waitUntilConnected(connectionTimeout, TimeUnit.MILLISECONDS)) {
             throw new Exception("cannot connect to zookeeper");
@@ -90,11 +91,12 @@ public class ClusterFromZK implements Cluster, IZkChildListener, IZkDataListener
     /**
      * any topology
      */
-    public ClusterFromZK(String clusterName, ZkClient zkClient, String machineId) {
+    public ClusterFromZK(String clusterName, ZkClient zkClient, String machineId) throws Exception {
 
         this.zkClient = zkClient;
         this.taskPath = "/s4/clusters/" + clusterName + "/tasks";
         this.processPath = "/s4/clusters/" + clusterName + "/process";
+        logger.trace("new anycluster {}", zkClient.getChildren(this.processPath));
         this.clusterName = clusterName;
         this.lock = new ReentrantLock();
         this.listeners = new ArrayList<ClusterChangeListener>();
@@ -174,25 +176,19 @@ public class ClusterFromZK implements Cluster, IZkChildListener, IZkDataListener
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((clusterName == null) ? 0 : clusterName.hashCode());
+        result = prime * result + ((clusterName == null) ? 0 : clusterName.hashCode())
+                + ((listeners == null) ? 0 : listeners.hashCode());
         return result;
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
-        ClusterFromZK other = (ClusterFromZK) obj;
-        if (clusterName == null) {
-            if (other.clusterName != null)
-                return false;
-        } else if (!clusterName.equals(other.clusterName))
-            return false;
-        return true;
+        return false;
+        /*
+         * if (this == obj) return true; if (obj == null) return false; if (getClass() != obj.getClass()) return false;
+         * ClusterFromZK other = (ClusterFromZK) obj; if (clusterName == null) { if (other.clusterName != null) return
+         * false; } else if (!clusterName.equals(other.clusterName)) return false; return true;
+         */
     }
 
     @Override

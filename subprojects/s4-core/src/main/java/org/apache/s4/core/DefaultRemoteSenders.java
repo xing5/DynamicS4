@@ -87,6 +87,9 @@ public class DefaultRemoteSenders implements RemoteSenders {
             // represented by a single stream consumer
             RemoteSender sender = sendersByTopology.get(consumer.getClusterName());
             if (sender == null) {
+                logger.debug("Creat RemoteSender. CLuster=[{}](" + remoteClusters.getCluster(consumer.getClusterName())
+                        + ") [{}]", consumer.getClusterName(), remoteClusters.getCluster(consumer.getClusterName())
+                        .getPhysicalCluster().getNodes());
                 RemoteSender newSender = new RemoteSender(remoteEmitters.getEmitter(remoteClusters.getCluster(consumer
                         .getClusterName())), hasher, consumer.getClusterName());
                 // TODO cleanup when remote topologies die

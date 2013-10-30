@@ -27,6 +27,8 @@ import org.apache.commons.io.FileUtils;
 import org.apache.s4.base.KeyFinder;
 import org.apache.s4.core.App;
 import org.apache.s4.core.Stream;
+import org.apache.s4.base.Event;
+import org.apache.s4.core.RemoteStream;
 import org.apache.s4.core.ft.CheckpointingConfig;
 import org.apache.s4.core.ft.CheckpointingConfig.CheckpointingMode;
 import org.slf4j.LoggerFactory;
@@ -35,6 +37,8 @@ import com.google.common.collect.ImmutableList;
 import com.yammer.metrics.reporting.CsvReporter;
 
 public class TwitterCounterApp extends App {
+    
+    private RemoteStream aggregatedTopicStream;
 
     @Override
     protected void onClose() {
@@ -52,6 +56,7 @@ public class TwitterCounterApp extends App {
             // we checkpoint this PE every 20s
             topNTopicPE.setCheckpointingConfig(new CheckpointingConfig.Builder(CheckpointingMode.TIME).frequency(20)
                     .timeUnit(TimeUnit.SECONDS).build());
+            
             /*
             @SuppressWarnings("unchecked")
             Stream<TopicEvent> aggregatedTopicStream = createStream("AggregatedTopicSeen", new KeyFinder<TopicEvent>() {
@@ -62,18 +67,26 @@ public class TwitterCounterApp extends App {
                 }
             }, topNTopicPE);
             */
+            
             //Modified by Xing. Try to change Stream to RemoteStream
-            RemoteStream aggregatedTopicStream = createOutputStream("AggregatedTopicSeen", new KeyFinder<TopicEvent>() {
+            aggregatedTopicStream = createOutputStream("AggregatedTopicSeen", new KeyFinder<Event>() {
+
+                @Override
+                public List<String> get(final Event arg0) {
+                    return ImmutableList.of("aggregationKey");
+                }
+            });
+            
+            createInputStream("AggregatedTopicSeen", new KeyFinder<TopicEvent>() {
 
                 @Override
                 public List<String> get(final TopicEvent arg0) {
                     return ImmutableList.of("aggregationKey");
                 }
-            });
-            createInputStream("AggregatedTopicSeen", topNTopicPE);
+            }, topNTopicPE);
 
             TopicCountAndReportPE topicCountAndReportPE = createPE(TopicCountAndReportPE.class);
-            topicCountAndReportPE.setDownstream(aggregatedTopicStream);
+            topicCountAndReportPE.setDownstream(aggregatedTopicStream);     
             topicCountAndReportPE.setTimerInterval(10, TimeUnit.SECONDS);
             // we checkpoint instances every 2 events
             topicCountAndReportPE.setCheckpointingConfig(new CheckpointingConfig.Builder(CheckpointingMode.EVENT_COUNT)
