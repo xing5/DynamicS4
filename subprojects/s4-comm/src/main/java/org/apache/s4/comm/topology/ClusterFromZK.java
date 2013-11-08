@@ -176,19 +176,26 @@ public class ClusterFromZK implements Cluster, IZkChildListener, IZkDataListener
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((clusterName == null) ? 0 : clusterName.hashCode())
-                + ((listeners == null) ? 0 : listeners.hashCode());
+        result = prime * result + ((clusterName == null) ? 0 : clusterName.hashCode());
         return result;
     }
 
     @Override
     public boolean equals(Object obj) {
-        return false;
-        /*
-         * if (this == obj) return true; if (obj == null) return false; if (getClass() != obj.getClass()) return false;
-         * ClusterFromZK other = (ClusterFromZK) obj; if (clusterName == null) { if (other.clusterName != null) return
-         * false; } else if (!clusterName.equals(other.clusterName)) return false; return true;
-         */
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        ClusterFromZK other = (ClusterFromZK) obj;
+        if (clusterName == null) {
+            if (other.clusterName != null)
+                return false;
+        } else if (!clusterName.equals(other.clusterName))
+            return false;
+        return true;
+
     }
 
     @Override

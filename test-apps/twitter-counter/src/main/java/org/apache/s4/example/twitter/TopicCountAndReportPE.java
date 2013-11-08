@@ -19,6 +19,7 @@
 package org.apache.s4.example.twitter;
 
 import org.apache.s4.core.App;
+import org.apache.s4.base.Event;
 import org.apache.s4.core.ProcessingElement;
 import org.apache.s4.core.RemoteStream;
 //import org.apache.s4.core.Stream;
@@ -52,12 +53,12 @@ public class TopicCountAndReportPE extends ProcessingElement {
         return downStream;
     }
 
-    public void onEvent(TopicEvent event) {
+    public void onEvent(Event event) {
         if (firstEvent) {
             logger.info("Handling new topic [{}]", getId());
             firstEvent = false;
         }
-        count += event.getCount();
+        count += event.get("count", int.class);
     }
 
     @Override
@@ -75,7 +76,10 @@ public class TopicCountAndReportPE extends ProcessingElement {
         // topicSeenEvent.put("count", Integer.class, count);
         // topicSeenEvent.put("aggregationKey", String.class, "aggregationValue");
         logger.debug("put event to stream ([{}]). ", downStream.getName());
-        downStream.put(new TopicEvent(getId(), count));
+        Event topicEvent = new Event();
+        topicEvent.put("topic", String.class, getId());
+        topicEvent.put("count", int.class, count);
+        downStream.put(topicEvent);
     }
 
     @Override

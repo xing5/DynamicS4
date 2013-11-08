@@ -34,7 +34,7 @@ import org.apache.s4.comm.staging.BlockingDeserializerExecutorFactory;
 import org.apache.s4.comm.tcp.DefaultRemoteEmitters;
 import org.apache.s4.comm.tcp.RemoteEmitters;
 import org.apache.s4.comm.topology.Cluster;
-import org.apache.s4.comm.topology.ClusterFromZK;
+import org.apache.s4.comm.topology.ClusterAllowDupFromZK;
 import org.apache.s4.comm.topology.Clusters;
 import org.apache.s4.comm.topology.ClustersFromZK;
 import org.slf4j.Logger;
@@ -88,7 +88,8 @@ public class DefaultCommModule extends AbstractModule {
         install(new FactoryModuleBuilder().implement(SerializerDeserializer.class, KryoSerDeser.class).build(
                 SerializerDeserializerFactory.class));
 
-        bind(Cluster.class).to(ClusterFromZK.class);
+        // bind(Cluster.class).to(ClusterFromZK.class);
+        bind(Cluster.class).to(ClusterAllowDupFromZK.class);
 
         bind(Clusters.class).to(ClustersFromZK.class);
 

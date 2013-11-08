@@ -264,6 +264,13 @@ public abstract class App {
         return clockType;
     }
 
+    /*
+     * @return the cluster name.
+     */
+    public String getClusterName() {
+        return cluster.getPhysicalCluster().getName();
+    }
+
     /**
      * 
      * Returns the id of the partition assigned to the current node.
@@ -400,6 +407,39 @@ public abstract class App {
      */
     protected <T extends Event> Stream<T> createInputStream(String streamName, ProcessingElement... processingElements) {
         return createInputStream(streamName, null, processingElements);
+
+    }
+
+    /**
+     * Prepare for an "input" stream, i.e. a stream that listens to events from remote clusters, but not register its
+     * interest in the stream with the specified name.
+     * 
+     * @param streamName
+     *            name of the remote stream
+     * @param finder
+     *            key finder
+     * @param processingElements
+     *            target processing elements
+     * @return a reference to the created input stream
+     */
+    protected <T extends Event> Stream<T> prepareInputStream(String streamName, KeyFinder<T> finder,
+            ProcessingElement... processingElements) {
+        return createStream(streamName, finder, processingElements);
+
+    }
+
+    /**
+     * Link the stream with consumer, activate the processing
+     */
+    protected void activateInputStream(String streamName) {
+        remoteStreams.addInputStream(clusterName, streamName);
+    }
+
+    /**
+     * @see App#createInputStream(String, KeyFinder, ProcessingElement...)
+     */
+    protected <T extends Event> Stream<T> prepareInputStream(String streamName, ProcessingElement... processingElements) {
+        return prepareInputStream(streamName, null, processingElements);
 
     }
 

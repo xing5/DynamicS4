@@ -24,21 +24,29 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.s4.base.GenericKeyFinder;
 import org.apache.s4.base.KeyFinder;
+import org.apache.s4.base.Event;
 import org.apache.s4.core.App;
 import org.apache.s4.core.Stream;
 import org.apache.s4.base.Event;
 import org.apache.s4.core.RemoteStream;
 import org.apache.s4.core.ft.CheckpointingConfig;
 import org.apache.s4.core.ft.CheckpointingConfig.CheckpointingMode;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.ImmutableList;
 import com.yammer.metrics.reporting.CsvReporter;
 
 public class TwitterCounterApp extends App {
-    
+
+    private static Logger logger = LoggerFactory.getLogger(TwitterCounterApp.class);
+    static final private String aggregatedTopicStreamName = "AggregatedTopicSeen";
+    static final private String topicSeenStreamName = "TopicSeen";
+    static final private String rawInputStreamName = "RawStatus";
     private RemoteStream aggregatedTopicStream;
+    private RemoteStream topicSeenStream;
 
     @Override
     protected void onClose() {
@@ -47,9 +55,29 @@ public class TwitterCounterApp extends App {
     @Override
     protected void onInit() {
         try {
-
+            prepare();
+            startStream();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+    
+    private void startStream() throws Exception{
+        // Read the DAG distribution and start the stream
+        if (getClusterName().equals("cluster1")) {
+            logger.debug("Cluster1 starts receiving RawStatus and TopicSeen.");
+            activateInputStream(rawInputStreamName);
+            activateInputStream(topicSeenStreamName);
+        }
+        else if (getClusterName().equals("cluster3")) {
+            logger.debug("Cluster3 starts receiving AggregatedTopic");
+            activateInputStream(aggregatedTopicStreamName);
+        }
+    }
+    
+    private void prepare() throws Exception{
             // uncomment the following in order to get metrics outputs in .csv files
-            // prepareMetricsOutputs();
+            prepareMetricsOutputs();
 
             TopNTopicPE topNTopicPE = createPE(TopNTopicPE.class);
             topNTopicPE.setTimerInterval(10, TimeUnit.SECONDS);
@@ -57,19 +85,7 @@ public class TwitterCounterApp extends App {
             topNTopicPE.setCheckpointingConfig(new CheckpointingConfig.Builder(CheckpointingMode.TIME).frequency(20)
                     .timeUnit(TimeUnit.SECONDS).build());
             
-            /*
-            @SuppressWarnings("unchecked")
-            Stream<TopicEvent> aggregatedTopicStream = createStream("AggregatedTopicSeen", new KeyFinder<TopicEvent>() {
-
-                @Override
-                public List<String> get(final TopicEvent arg0) {
-                    return ImmutableList.of("aggregationKey");
-                }
-            }, topNTopicPE);
-            */
-            
-            //Modified by Xing. Try to change Stream to RemoteStream
-            aggregatedTopicStream = createOutputStream("AggregatedTopicSeen", new KeyFinder<Event>() {
+            aggregatedTopicStream = createOutputStream(aggregatedTopicStreamName, new KeyFinder<Event>() {
 
                 @Override
                 public List<String> get(final Event arg0) {
@@ -77,10 +93,10 @@ public class TwitterCounterApp extends App {
                 }
             });
             
-            createInputStream("AggregatedTopicSeen", new KeyFinder<TopicEvent>() {
+            prepareInputStream(aggregatedTopicStreamName, new KeyFinder<Event>() {
 
                 @Override
-                public List<String> get(final TopicEvent arg0) {
+                public List<String> get(final Event arg0) {
                     return ImmutableList.of("aggregationKey");
                 }
             }, topNTopicPE);
@@ -91,26 +107,20 @@ public class TwitterCounterApp extends App {
             // we checkpoint instances every 2 events
             topicCountAndReportPE.setCheckpointingConfig(new CheckpointingConfig.Builder(CheckpointingMode.EVENT_COUNT)
                     .frequency(2).build());
-            Stream<TopicEvent> topicSeenStream = createStream("TopicSeen", new KeyFinder<TopicEvent>() {
 
-                @Override
-                public List<String> get(final TopicEvent arg0) {
-                    return ImmutableList.of(arg0.getTopic());
-                }
-            }, topicCountAndReportPE);
+            
+            KeyFinder<Event> kf = new GenericKeyFinder<Event>("topic", Event.class);
+            topicSeenStream = createOutputStream(topicSeenStreamName, kf);
+            prepareInputStream(topicSeenStreamName, kf, topicCountAndReportPE);
 
             TopicExtractorPE topicExtractorPE = createPE(TopicExtractorPE.class);
             topicExtractorPE.setDownStream(topicSeenStream);
             topicExtractorPE.setSingleton(true);
-            createInputStream("RawStatus", topicExtractorPE);
-
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+            prepareInputStream(rawInputStreamName, topicExtractorPE);
     }
 
     private void prepareMetricsOutputs() throws IOException {
-        File metricsDirForPartition = new File("metrics/" + getPartitionId());
+        File metricsDirForPartition = new File("metrics/" + getClusterName() + "/" + getPartitionId());
         if (metricsDirForPartition.exists()) {
             FileUtils.deleteDirectory(metricsDirForPartition);
         }

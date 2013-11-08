@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.TreeSet;
 
 import org.apache.s4.core.App;
+import org.apache.s4.base.Event;
 import org.apache.s4.core.ProcessingElement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,8 +51,8 @@ public class TopNTopicPE extends ProcessingElement {
         logger.info("key: [{}]", getId());
     }
 
-    public void onEvent(TopicEvent event) {
-        countedTopics.put(event.getTopic(), event.getCount());
+    public void onEvent(Event event) {
+        countedTopics.put(event.get("topic", String.class), event.get("count", int.class));
     }
 
     public void onTime() {

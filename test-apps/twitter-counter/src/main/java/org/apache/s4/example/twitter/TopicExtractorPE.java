@@ -23,7 +23,7 @@ import java.net.ServerSocket;
 import org.apache.s4.base.Event;
 import org.apache.s4.core.App;
 import org.apache.s4.core.ProcessingElement;
-import org.apache.s4.core.Streamable;
+import org.apache.s4.core.RemoteStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +32,8 @@ import com.google.common.base.Splitter;
 public class TopicExtractorPE extends ProcessingElement {
 
     static private ServerSocket serverSocket;
-    Streamable<Event> downStream;
+    transient RemoteStream downStream;
+    //Streamable<Event> downStream;
     static Logger logger = LoggerFactory.getLogger(TopicExtractorPE.class);
 
     public TopicExtractorPE(App app) {
@@ -45,7 +46,7 @@ public class TopicExtractorPE extends ProcessingElement {
 
     }
 
-    public void setDownStream(Streamable<Event> stream) {
+    public void setDownStream(RemoteStream stream) {
         this.downStream = stream;
     }
 
@@ -64,7 +65,10 @@ public class TopicExtractorPE extends ProcessingElement {
             if (topicOnly.length() == 0 || topicOnly.contains("#")) {
                 continue;
             }
-            downStream.put(new TopicEvent(topicOnly, 1));
+            Event topicEvent = new Event();
+            topicEvent.put("topic", String.class, topicOnly);
+            topicEvent.put("count", int.class, 1);
+            downStream.put(topicEvent);
         }
     }
 
