@@ -20,14 +20,14 @@ package org.apache.s4.example.twitter;
 
 import org.apache.s4.core.App;
 import org.apache.s4.base.Event;
-import org.apache.s4.core.ProcessingElement;
+import org.apache.s4.core.DynamicProcessingElement;
 import org.apache.s4.core.RemoteStream;
 //import org.apache.s4.core.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 // keyed by topic name
-public class TopicCountAndReportPE extends ProcessingElement {
+public class TopicCountAndReportPE extends DynamicProcessingElement {
 
     transient RemoteStream downStream;
     //transient Stream<TopicEvent> downStream;
@@ -58,6 +58,7 @@ public class TopicCountAndReportPE extends ProcessingElement {
             logger.info("Handling new topic [{}]", getId());
             firstEvent = false;
         }
+        logger.info("Get new topic [{}], count [{}]", getId(), count);
         count += event.get("count", int.class);
     }
 

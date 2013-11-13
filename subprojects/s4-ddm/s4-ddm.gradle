@@ -15,25 +15,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.s4.core;
 
-import org.apache.s4.base.Event;
 
-/**
- * Sends events to remote clusters. Target clusters are selected dynamically based on the stream name information from
- * the event.
- * 
- */
-public interface RemoteSenders {
-
-    public abstract void send(String hashKey, Event event);
-
-    public abstract void setApp(App app);
-
-    public abstract App getApp();
-
-    public abstract void sendPE(String key, byte[] peState, String streamName, int peIndex, String destClusterName);
-
-    public abstract void sendAllCachedPE(String string, String newConsumerClusterName);
-
+description = 'Dynamic Distribution Manager'
+ 
+dependencies {
+    compile project(":s4-base")
+    compile project(":s4-comm")
+    compile project(":s4-core")
+    compile libraries.jcommander
+    compile libraries.zkclient
+    compile libraries.log4j
 }
+
+apply plugin:'application'
+mainClassName = "org.apache.s4.ddm.MapperTool"
+

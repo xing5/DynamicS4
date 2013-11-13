@@ -94,7 +94,8 @@ public class DefaultCoreModule extends AbstractModule {
         bind(StreamExecutorServiceFactory.class).to(BlockingStreamExecutorServiceFactory.class);
 
         bind(RemoteStreams.class).to(ZkRemoteStreams.class);
-        bind(RemoteSenders.class).to(DefaultRemoteSenders.class);
+        // bind(RemoteSenders.class).to(DefaultRemoteSenders.class);
+        bind(RemoteSenders.class).to(LocalAndRemoteSenders.class);
 
     }
 

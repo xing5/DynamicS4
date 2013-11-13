@@ -56,6 +56,8 @@ public class DefaultRemoteSenders implements RemoteSenders {
 
     final Hasher hasher;
 
+    private App app;
+
     ConcurrentMap<String, RemoteSender> sendersByTopology = new ConcurrentHashMap<String, RemoteSender>();
 
     private final ExecutorService executorService;
@@ -103,6 +105,16 @@ public class DefaultRemoteSenders implements RemoteSenders {
         }
     }
 
+    public void setApp(App app) {
+        if (this.app != null) {
+            this.app = app;
+        }
+    }
+
+    public App getApp() {
+        return this.app;
+    }
+
     class SendToRemoteClusterTask implements Runnable {
 
         String hashKey;
@@ -126,6 +138,18 @@ public class DefaultRemoteSenders implements RemoteSenders {
             }
 
         }
+
+    }
+
+    @Override
+    public void sendPE(String key, byte[] peState, String streamName, int peIndex, String destClusterName) {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public void sendAllCachedPE(String string, String newConsumerClusterName) {
+        // TODO Auto-generated method stub
 
     }
 }

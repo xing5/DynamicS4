@@ -19,6 +19,8 @@ package org.apache.s4.comm.topology;
 
 import java.util.Set;
 
+import org.I0Itec.zkclient.IZkChildListener;
+
 /**
  * <p>
  * Monitors streams available in the S4 cluster.
@@ -56,5 +58,11 @@ public interface RemoteStreams {
      * @param streamName
      */
     public abstract void addInputStream(String clusterName, String streamName);
+
+    public abstract void subscribeTransmission(String name, IZkChildListener ln);
+
+    public abstract String getPEDest(String name, String cluster);
+
+    public abstract void clearTrans(String string, String clusterName);
 
 }

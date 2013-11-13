@@ -15,25 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.s4.core;
-
-import org.apache.s4.base.Event;
 
 /**
- * Sends events to remote clusters. Target clusters are selected dynamically based on the stream name information from
- * the event.
- * 
+ * Implementations of S4-related commands. Includes parsing, validation and interpretation of the various commands and options available.
  */
-public interface RemoteSenders {
-
-    public abstract void send(String hashKey, Event event);
-
-    public abstract void setApp(App app);
-
-    public abstract App getApp();
-
-    public abstract void sendPE(String key, byte[] peState, String streamName, int peIndex, String destClusterName);
-
-    public abstract void sendAllCachedPE(String string, String newConsumerClusterName);
-
-}
+package org.apache.s4.ddm;

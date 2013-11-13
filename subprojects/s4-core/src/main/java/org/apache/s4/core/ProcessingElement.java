@@ -141,6 +141,8 @@ public abstract class ProcessingElement implements Cloneable {
     transient private boolean isSingleton = false;
     transient long eventCount = 0;
 
+    transient private boolean timerIsOn = false;
+
     transient private OverloadDispatcher overloadDispatcher;
     transient private boolean recoveryAttempted = false;
     transient private boolean dirty = false;
@@ -423,6 +425,7 @@ public abstract class ProcessingElement implements Cloneable {
                     }
                 }).setNameFormat("Timer-" + getClass().getSimpleName()).build();
         triggerTimer = Executors.newSingleThreadScheduledExecutor(threadFactory);
+        timerIsOn = true;
         return this;
     }
 
@@ -437,6 +440,14 @@ public abstract class ProcessingElement implements Cloneable {
      */
     public boolean isThreadSafe() {
         return isThreadSafe;
+    }
+
+    public void switchTimerOn() {
+        timerIsOn = true;
+    }
+
+    public void switchTimerOff() {
+        timerIsOn = false;
     }
 
     protected void handleInputEvent(Event event) {
@@ -541,6 +552,10 @@ public abstract class ProcessingElement implements Cloneable {
         }
 
         /* Remove all the instances. */
+        peInstances.invalidateAll();
+    }
+
+    protected void removeAllInstances() {
         peInstances.invalidateAll();
     }
 
@@ -723,6 +738,10 @@ public abstract class ProcessingElement implements Cloneable {
         @Override
         public void run() {
 
+            if (!timerIsOn) {
+                return;
+            }
+
             for (Map.Entry<String, ProcessingElement> entry : getPEInstances().entrySet()) {
 
                 ProcessingElement peInstance = entry.getValue();
@@ -821,6 +840,15 @@ public abstract class ProcessingElement implements Cloneable {
         if (serializedState == null) {
             return;
         }
+        try {
+            ProcessingElement peInOldState = deserializeState(serializedState);
+            restoreState(peInOldState);
+        } catch (RuntimeException e) {
+            logger.error("Cannot restore state for key [" + new CheckpointId(this) + "]: " + e.getMessage(), e);
+        }
+    }
+
+    protected void recover(byte[] serializedState) {
         try {
             ProcessingElement peInOldState = deserializeState(serializedState);
             restoreState(peInOldState);

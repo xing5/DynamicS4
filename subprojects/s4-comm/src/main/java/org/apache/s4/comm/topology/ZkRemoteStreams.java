@@ -50,13 +50,15 @@ public class ZkRemoteStreams implements IZkStateListener, IZkChildListener, Remo
     private final Map<String, Map<String, Set<StreamConsumer>>> streams = new HashMap<String, Map<String, Set<StreamConsumer>>>();
 
     public enum StreamType {
-        PRODUCER, CONSUMER;
+        PRODUCER, CONSUMER, TRANSMISSION;
 
         public String getPath(String streamName) {
             switch (this) {
                 case PRODUCER:
                     return STREAMS_PATH + "/" + streamName + "/" + getCollectionName();
                 case CONSUMER:
+                    return STREAMS_PATH + "/" + streamName + "/" + getCollectionName();
+                case TRANSMISSION:
                     return STREAMS_PATH + "/" + streamName + "/" + getCollectionName();
                 default:
                     throw new RuntimeException("Invalid path in enum StreamType");
@@ -69,6 +71,8 @@ public class ZkRemoteStreams implements IZkStateListener, IZkChildListener, Remo
                     return "producers";
                 case CONSUMER:
                     return "consumers";
+                case TRANSMISSION:
+                    return "transmission";
                 default:
                     throw new RuntimeException("Invalid path in enum StreamType");
             }
@@ -229,5 +233,27 @@ public class ZkRemoteStreams implements IZkStateListener, IZkChildListener, Remo
         } finally {
             lock.unlock();
         }
+    }
+
+    @Override
+    public void subscribeTransmission(String name, IZkChildListener ln) {
+        logger.debug("stream [{}] subscribing transmission dir.");
+        zkClient.createPersistent(StreamType.TRANSMISSION.getPath(name), true);
+        zkClient.subscribeChildChanges(StreamType.TRANSMISSION.getPath(name), ln);
+    }
+
+    public String getPEDest(String streamName, String clusterName) {
+        ZNRecord peTran = zkClient.readData(StreamType.TRANSMISSION.getPath(streamName) + "/" + clusterName, true);
+        if (peTran != null) {
+            return peTran.getSimpleField("DestCluster");
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    public void clearTrans(String streamName, String clusterName) {
+        logger.debug("delete transmission dir stream [{}] and cluster [{}]", streamName, clusterName);
+        zkClient.deleteRecursive(StreamType.TRANSMISSION.getPath(streamName) + "/" + clusterName);
     }
 }

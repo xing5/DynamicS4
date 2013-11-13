@@ -28,7 +28,7 @@ import java.util.TreeSet;
 
 import org.apache.s4.core.App;
 import org.apache.s4.base.Event;
-import org.apache.s4.core.ProcessingElement;
+import org.apache.s4.core.DynamicProcessingElement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,7 +37,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 
-public class TopNTopicPE extends ProcessingElement {
+public class TopNTopicPE extends DynamicProcessingElement {
 
     static Logger logger = LoggerFactory.getLogger(TopNTopicPE.class);
     Map<String, Integer> countedTopics = Maps.newHashMap();
@@ -52,6 +52,7 @@ public class TopNTopicPE extends ProcessingElement {
     }
 
     public void onEvent(Event event) {
+        logger.debug("TopNTopicPE [" + getId() + "] receive event, topic: [{}] count: [{}]", event.get("topic", String.class), event.get("count", int.class));
         countedTopics.put(event.get("topic", String.class), event.get("count", int.class));
     }
 

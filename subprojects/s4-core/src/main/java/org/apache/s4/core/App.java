@@ -19,10 +19,12 @@
 package org.apache.s4.core;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import org.I0Itec.zkclient.IZkChildListener;
 import org.apache.s4.base.Event;
 import org.apache.s4.base.Hasher;
 import org.apache.s4.base.KeyFinder;
@@ -58,7 +60,7 @@ public abstract class App {
     // /* Stream to PE prototype relations. */
     // final private Multimap<Streamable<? extends Event>, ProcessingElement> stream2pe = LinkedListMultimap.create();
     /* All the internal streams in this app. */
-    final private List<Streamable<Event>> streams = new ArrayList<Streamable<Event>>();
+    final private Map<String, Streamable<Event>> streams = Maps.newHashMap();
 
     /* Pes indexed by name. */
     final Map<String, ProcessingElement> peByName = Maps.newHashMap();
@@ -130,8 +132,8 @@ public abstract class App {
     }
 
     /* Should only be used within the core package. */
-    public void addStream(Streamable<Event> stream) {
-        streams.add(stream);
+    public void addStream(String streamName, Streamable<Event> stream) {
+        streams.put(streamName, stream);
     }
 
     /* Returns list of PE prototypes. Should only be used within the core package. */
@@ -141,8 +143,12 @@ public abstract class App {
 
     /* Returns list of internal streams. Should only be used within the core package. */
     // TODO visibility
-    public List<Streamable<Event>> getStreams() {
-        return streams;
+    public Collection<Streamable<Event>> getStreams() {
+        return streams.values();
+    }
+
+    public Streamable<Event> getStream(String streamName) {
+        return streams.get(streamName);
     }
 
     protected abstract void onStart();
@@ -159,6 +165,7 @@ public abstract class App {
         for (Streamable<? extends Event> stream : getStreams()) {
             stream.start();
         }
+
         //
         // /* Allow abstract PE to initialize. */
         for (ProcessingElement pe : getPePrototypes()) {
@@ -176,6 +183,7 @@ public abstract class App {
 
     public final void init() {
 
+        this.remoteSenders.setApp(this);
         onInit();
     }
 
@@ -336,9 +344,15 @@ public abstract class App {
      */
     protected <T extends Event> Stream<T> createStream(String name, KeyFinder<T> finder, Class<T> eventType,
             ProcessingElement... processingElements) {
-
         return new Stream<T>(this).setName(name).setKey(finder).setPEs(processingElements).setEventType(eventType)
-                .setSerializerDeserializerFactory(serDeserFactory).register();
+                .setSerializerDeserializerFactory(serDeserFactory).register(name);
+    }
+
+    protected <T extends Event> Stream<T> createStream(String name, KeyFinder<T> finder, Class<T> eventType,
+            DynamicProcessingElement... processingElements) {
+        remoteStreams.subscribeTransmission(name, new TransmissionController());
+        return new Stream<T>(this).setName(name).setKey(finder).setPEs(processingElements).setEventType(eventType)
+                .setSerializerDeserializerFactory(serDeserFactory).register(name);
     }
 
     /**
@@ -346,6 +360,11 @@ public abstract class App {
      */
     protected <T extends Event> Stream<T> createStream(String name, KeyFinder<T> finder,
             ProcessingElement... processingElements) {
+        return createStream(name, finder, null, processingElements);
+    }
+
+    protected <T extends Event> Stream<T> createStream(String name, KeyFinder<T> finder,
+            DynamicProcessingElement... processingElements) {
         return createStream(name, finder, null, processingElements);
     }
 
@@ -428,6 +447,12 @@ public abstract class App {
 
     }
 
+    protected <T extends Event> Stream<T> prepareInputStream(String streamName, KeyFinder<T> finder,
+            DynamicProcessingElement... processingElements) {
+        return createStream(streamName, finder, processingElements);
+
+    }
+
     /**
      * Link the stream with consumer, activate the processing
      */
@@ -439,6 +464,12 @@ public abstract class App {
      * @see App#createInputStream(String, KeyFinder, ProcessingElement...)
      */
     protected <T extends Event> Stream<T> prepareInputStream(String streamName, ProcessingElement... processingElements) {
+        return prepareInputStream(streamName, null, processingElements);
+
+    }
+
+    protected <T extends Event> Stream<T> prepareInputStream(String streamName,
+            DynamicProcessingElement... processingElements) {
         return prepareInputStream(streamName, null, processingElements);
 
     }
@@ -508,4 +539,35 @@ public abstract class App {
         return stream != null ? stream.getName() + " " : "null ";
     }
 
+    public class TransmissionController implements IZkChildListener {
+
+        public void handleChildChange(String parentPath, List<String> currentChilds) throws Exception {
+            String[] s = parentPath.split("/");
+            // /s4/streams/[streamName]/transmission
+            // simplefield 'DestCluster' is the new consumerClusterName.
+            logger.debug("TransmissionController detected changes: [{}]", s[3]);
+            if (s.length == 5 && s[2].equals("streams") && s[4].equals("transmission")) {
+
+                for (String child : currentChilds) {
+                    if (!clusterName.equals(child)) {
+                        continue;
+                    }
+                    // package PE and send
+                    String newConsumerClusterName = remoteStreams.getPEDest(s[3], clusterName);
+                    logger.debug("PE Transmission Triggered! ");
+                    int i = 0;
+                    for (ProcessingElement pePrototype : streams.get(s[3]).getTargetPEs()) {
+                        for (ProcessingElement pe : pePrototype.getInstances()) {
+                            remoteSenders.sendPE(pe.getId(), pe.serializeState(), s[3], i, newConsumerClusterName);
+                        }
+                        pePrototype.removeAllInstances();
+                        i++;
+                    }
+                    remoteSenders.sendAllCachedPE(s[3], newConsumerClusterName);
+                    logger.debug("Sent" + i + " pe states");
+                    remoteStreams.clearTrans(s[3], clusterName);
+                }
+            }
+        }
+    }
 }

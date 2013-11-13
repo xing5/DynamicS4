@@ -87,4 +87,10 @@ public class RemoteStream implements Streamable<Event> {
 
     }
 
+    @Override
+    public ProcessingElement[] getTargetPEs() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
 }

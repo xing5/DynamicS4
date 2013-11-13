@@ -175,6 +175,8 @@ public class Stream<T extends Event> implements Streamable {
              */
             if (!sender.checkAndSendIfNotLocal(key.get((T) event), event)) {
 
+                logger.debug("=====Same Machine==== skip network");
+
                 /*
                  * Sender checked and decided that the target is local so we simply put the event in the queue and we
                  * save the trip over the network.
@@ -259,8 +261,8 @@ public class Stream<T extends Event> implements Streamable {
         return receiver;
     }
 
-    public Stream<T> register() {
-        app.addStream(this);
+    public Stream<T> register(String streamName) {
+        app.addStream(streamName, this);
         return this;
     }
 
@@ -303,38 +305,59 @@ public class Stream<T extends Event> implements Streamable {
 
         @Override
         public void run() {
-            app.metrics.dequeuedEvent(name);
 
-            /* Send event to each target PE. */
-            for (int i = 0; i < targetPEs.length; i++) {
+            if (event.getStreamId().startsWith("TRANS@")) {
+                logger.debug("Strated pe recover! event: " + event.getStreamId());
+                String s[] = event.getStreamId().split("@");
+                if (s.length >= 3) {
+                    try {
+                        int peIndex = Integer.parseInt(s[1]);
+                        targetPEs[peIndex].switchTimerOn();
+                        if (peIndex < targetPEs.length) {
+                            for (String peId : event.getAttributesAsMap().keySet()) {
+                                logger.debug("Recovering pe: " + peId);
+                                ProcessingElement pe = targetPEs[peIndex].getInstanceForKey(peId);
+                                String byteValue = event.get(peId, String.class);
+                                pe.recover(byteValue.getBytes());
+                            }
 
-                if (key == null) {
+                        }
+                    } catch (Exception e) {
+                        logger.debug("recover pe failed");
+                    }
+                }
+            } else {
+                app.metrics.dequeuedEvent(name);
 
-                    /* Broadcast to all PE instances! */
+                /* Send event to each target PE. */
+                for (int i = 0; i < targetPEs.length; i++) {
 
-                    /* STEP 1: find all PE instances. */
+                    if (key == null) {
 
-                    Collection<ProcessingElement> pes = targetPEs[i].getInstances();
+                        /* Broadcast to all PE instances! */
 
-                    /* STEP 2: iterate and pass event to PE instance. */
-                    for (ProcessingElement pe : pes) {
+                        /* STEP 1: find all PE instances. */
 
+                        Collection<ProcessingElement> pes = targetPEs[i].getInstances();
+
+                        /* STEP 2: iterate and pass event to PE instance. */
+                        for (ProcessingElement pe : pes) {
+
+                            pe.handleInputEvent(event);
+                        }
+
+                    } else {
+
+                        /* We have a key, send to target PE. */
+
+                        /* STEP 1: find the PE instance for key. */
+                        ProcessingElement pe = targetPEs[i].getInstanceForKey(key.get(event));
+
+                        /* STEP 2: pass event to PE instance. */
                         pe.handleInputEvent(event);
                     }
-
-                } else {
-
-                    /* We have a key, send to target PE. */
-
-                    /* STEP 1: find the PE instance for key. */
-                    ProcessingElement pe = targetPEs[i].getInstanceForKey(key.get(event));
-
-                    /* STEP 2: pass event to PE instance. */
-                    pe.handleInputEvent(event);
                 }
             }
-
         }
-
     }
 }

@@ -146,6 +146,10 @@ public class Event {
         return map.containsKey(key);
     }
 
+    public int getDataSize() {
+        return map.size();
+    }
+
     public Map<String, String> getAttributesAsMap() {
 
         Map<String, String> amap = Maps.newHashMap();

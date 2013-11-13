@@ -94,10 +94,15 @@ public class ReceiverImpl implements Receiver {
          * efficient for the case in which we send the same event to multiple PEs.
          */
         try {
-            streams.get(streamId).receiveEvent(event);
+            if (streamId.startsWith("TRANS@") && streamId.split("@").length >= 3) {
+                String realStreamId = streamId.substring(streamId.indexOf('@', 6) + 1);
+                streams.get(realStreamId).receiveEvent(event);
+                logger.debug("receive pe transmission event from stream [{}]", realStreamId);
+            } else {
+                streams.get(streamId).receiveEvent(event);
+            }
         } catch (NullPointerException e) {
             logger.error("Could not find target stream for event with streamId={}", streamId);
         }
     }
-
 }
