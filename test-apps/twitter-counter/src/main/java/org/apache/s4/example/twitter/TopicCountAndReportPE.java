@@ -58,7 +58,7 @@ public class TopicCountAndReportPE extends DynamicProcessingElement {
             logger.info("Handling new topic [{}]", getId());
             firstEvent = false;
         }
-        logger.info("Get new topic [{}], count [{}]", getId(), count);
+        //logger.info("Get new topic [{}], count [{}]", getId(), count);
         count += event.get("count", int.class);
     }
 
@@ -76,7 +76,7 @@ public class TopicCountAndReportPE extends DynamicProcessingElement {
         // topicSeenEvent.put("topic", String.class, getId());
         // topicSeenEvent.put("count", Integer.class, count);
         // topicSeenEvent.put("aggregationKey", String.class, "aggregationValue");
-        logger.debug("put event to stream ([{}]). ", downStream.getName());
+        // logger.debug("put event to stream ([{}]). ", downStream.getName());
         Event topicEvent = new Event();
         topicEvent.put("topic", String.class, getId());
         topicEvent.put("count", int.class, count);

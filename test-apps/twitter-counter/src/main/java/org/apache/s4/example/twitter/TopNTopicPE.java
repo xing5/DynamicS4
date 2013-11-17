@@ -52,7 +52,7 @@ public class TopNTopicPE extends DynamicProcessingElement {
     }
 
     public void onEvent(Event event) {
-        logger.debug("TopNTopicPE [" + getId() + "] receive event, topic: [{}] count: [{}]", event.get("topic", String.class), event.get("count", int.class));
+        //logger.debug("TopNTopicPE [" + getId() + "] receive event, topic: [{}] count: [{}]", event.get("topic", String.class), event.get("count", int.class));
         countedTopics.put(event.get("topic", String.class), event.get("count", int.class));
     }
 

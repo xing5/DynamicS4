@@ -121,7 +121,7 @@ public class TwitterInputAdapter extends AdapterApp {
     protected void onStart() {
         try {
             t.start();
-            //connectAndRead();
+            connectAndRead();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -133,12 +133,12 @@ public class TwitterInputAdapter extends AdapterApp {
         public void run() {
             while (true) {
                 try {
-                    logger.debug("try sending a event.");
-                    //Status status = messageQueue.take();
+                    //logger.debug("try sending a event.");
+                    Status status = messageQueue.take();
                     Event event = new Event();
-                    //event.put("statusText", String.class, status.getText());//"#woailuo haha");
-                    event.put("statusText", String.class, "#woailuo haha");
-                    Thread.sleep(1000);
+                    event.put("statusText", String.class, status.getText());//"#woailuo haha");
+//                    event.put("statusText", String.class, "#woailuo haha");
+//                    Thread.sleep(1000);
                     getRemoteStream().put(event);
                 } catch (Exception e) {
 
