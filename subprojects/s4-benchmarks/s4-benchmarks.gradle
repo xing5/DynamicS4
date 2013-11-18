@@ -55,7 +55,7 @@ dependencies {
     compile project( ":s4-comm" )
     compile (libraries.jcommander)
     compile (libraries.zkclient)
-    compile (libraries.metrics)
+    compile (libraries.metrics_core)
     
    
 

@@ -20,6 +20,7 @@ package org.apache.s4.example.twitter;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -36,8 +37,10 @@ import org.apache.s4.core.ft.CheckpointingConfig.CheckpointingMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.codahale.metrics.MetricFilter;
+import com.codahale.metrics.graphite.Graphite;
+import com.codahale.metrics.graphite.GraphiteReporter;
 import com.google.common.collect.ImmutableList;
-import com.yammer.metrics.reporting.CsvReporter;
 
 public class TwitterCounterApp extends App {
 
@@ -120,16 +123,11 @@ public class TwitterCounterApp extends App {
     }
 
     private void prepareMetricsOutputs() throws IOException {
-        File metricsDirForPartition = new File("metrics/" + getClusterName() + "/" + getPartitionId());
-        if (metricsDirForPartition.exists()) {
-            FileUtils.deleteDirectory(metricsDirForPartition);
-        }
-        // activate metrics csv dump
-        if (!metricsDirForPartition.mkdirs()) {
-            LoggerFactory.getLogger(getClass()).error("Cannot create directory {}",
-                    new File("metrics").getAbsolutePath());
-        }
-        CsvReporter.enable(metricsDirForPartition, 10, TimeUnit.SECONDS);
+        final Graphite graphite = new Graphite(new InetSocketAddress("10.1.1.2", 2003));
+        final GraphiteReporter reporter = GraphiteReporter.forRegistry(this.getMetricRegistry()).prefixedWith("S4")
+                .convertRatesTo(TimeUnit.SECONDS).convertDurationsTo(TimeUnit.MILLISECONDS)
+                .filter(MetricFilter.ALL).build(graphite);
+        reporter.start(1, TimeUnit.MINUTES);
     }
 
     @Override

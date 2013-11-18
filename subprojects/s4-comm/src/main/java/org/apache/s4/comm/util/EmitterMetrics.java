@@ -17,14 +17,12 @@
  */
 package org.apache.s4.comm.util;
 
-import java.util.concurrent.TimeUnit;
-
+import org.apache.s4.base.util.S4MetricsRegistry;
 import org.apache.s4.comm.tcp.TCPEmitter;
 import org.apache.s4.comm.topology.Cluster;
 
-import com.google.inject.Inject;
-import com.yammer.metrics.Metrics;
-import com.yammer.metrics.core.Meter;
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.MetricRegistry;
 
 public class EmitterMetrics {
     private final Meter[] emittersMeters;
@@ -32,8 +30,9 @@ public class EmitterMetrics {
     public EmitterMetrics(Cluster cluster) {
         emittersMeters = new Meter[cluster.getPhysicalCluster().getPartitionCount()];
         for (int i = 0; i < cluster.getPhysicalCluster().getPartitionCount(); i++) {
-            emittersMeters[i] = Metrics.newMeter(TCPEmitter.class, "event-emitted@"
-                    + cluster.getPhysicalCluster().getName() + "@partition-" + i, "event-emitted", TimeUnit.SECONDS);
+            emittersMeters[i] = S4MetricsRegistry.getMr().meter(
+                    MetricRegistry.name(TCPEmitter.class, "event-emitted@" + cluster.getPhysicalCluster().getName()
+                            + "@partition-" + i, "event-emitted"));
         }
     }
 

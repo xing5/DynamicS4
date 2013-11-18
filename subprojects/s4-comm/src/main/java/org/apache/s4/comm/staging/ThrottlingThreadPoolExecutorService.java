@@ -39,8 +39,7 @@ import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.RateLimiter;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.yammer.metrics.Metrics;
-import com.yammer.metrics.core.Meter;
+import com.google.inject.Inject;
 
 public class ThrottlingThreadPoolExecutorService extends ForwardingListeningExecutorService {
 
@@ -53,7 +52,6 @@ public class ThrottlingThreadPoolExecutorService extends ForwardingListeningExec
     private BlockingQueue<Runnable> workQueue;
     private RateLimiter rateLimitedPermits;
     private ListeningExecutorService executorDelegatee;
-    Meter droppingMeter;
 
     /**
      * 
@@ -73,8 +71,6 @@ public class ThrottlingThreadPoolExecutorService extends ForwardingListeningExec
         this.streamName = threadName;
         this.classLoader = classLoader;
         this.workQueueSize = workQueueSize;
-        this.droppingMeter = Metrics.newMeter(getClass(), "throttling-dropping", "throttling-dropping",
-                TimeUnit.SECONDS);
         ThreadFactory threadFactory = new ThreadFactoryBuilder().setDaemon(true).setNameFormat(threadName)
                 .setThreadFactory(new ThreadFactory() {
 
@@ -92,7 +88,6 @@ public class ThrottlingThreadPoolExecutorService extends ForwardingListeningExec
 
                     @Override
                     public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
-                        droppingMeter.mark();
                     }
                 });
         eventProcessingExecutor.allowCoreThreadTimeOut(true);

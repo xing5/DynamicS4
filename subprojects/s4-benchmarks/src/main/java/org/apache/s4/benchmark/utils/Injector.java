@@ -21,6 +21,7 @@ import java.io.File;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -29,19 +30,20 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.s4.base.Event;
 import org.apache.s4.base.KeyFinder;
+import org.apache.s4.base.util.S4MetricsRegistry;
 import org.apache.s4.core.RemoteStream;
 import org.apache.s4.core.adapter.AdapterApp;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.codahale.metrics.ConsoleReporter;
+import com.codahale.metrics.CsvReporter;
+import com.codahale.metrics.Gauge;
+import com.codahale.metrics.MetricRegistry;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import com.yammer.metrics.Metrics;
-import com.yammer.metrics.core.Gauge;
-import com.yammer.metrics.reporting.ConsoleReporter;
-import com.yammer.metrics.reporting.CsvReporter;
 
 public class Injector extends AdapterApp {
 
@@ -88,7 +90,6 @@ public class Injector extends AdapterApp {
         if (!logDir.mkdirs()) {
             logger.debug("Cannot create dir " + logDir.getAbsolutePath());
         }
-        CsvReporter.enable(logDir, CSV_REPORTER_INTERVAL_S, TimeUnit.SECONDS);
         remoteStreamKeyFinder = new KeyFinder<Event>() {
 
             @Override
@@ -97,7 +98,14 @@ public class Injector extends AdapterApp {
             }
         };
         super.onInit();
-        ConsoleReporter.enable(30, TimeUnit.SECONDS);
+        CsvReporter reporter = CsvReporter.forRegistry(S4MetricsRegistry.getMr()).formatFor(Locale.CANADA)
+                .convertRatesTo(TimeUnit.SECONDS).convertDurationsTo(TimeUnit.MILLISECONDS).build(logDir);
+        reporter.start(CSV_REPORTER_INTERVAL_S, TimeUnit.SECONDS);
+
+        ConsoleReporter reporter1 = ConsoleReporter.forRegistry(S4MetricsRegistry.getMr())
+                .convertRatesTo(TimeUnit.SECONDS).convertDurationsTo(TimeUnit.MILLISECONDS).build();
+        reporter1.start(30, TimeUnit.SECONDS);
+
     }
 
     @Override
@@ -139,13 +147,14 @@ public class Injector extends AdapterApp {
             }
         }, 1, 1, TimeUnit.SECONDS);
 
-        Metrics.newGauge(Injector.class, "injection-rate", new Gauge<BigDecimal>() {
+        S4MetricsRegistry.getMr().register(MetricRegistry.name(Injector.class, "injection-rate"),
+                new Gauge<BigDecimal>() {
 
-            @Override
-            public BigDecimal value() {
-                return rate;
-            }
-        });
+                    @Override
+                    public BigDecimal getValue() {
+                        return rate;
+                    }
+                });
 
         RemoteStream remoteStream = getRemoteStream();
 

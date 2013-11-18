@@ -41,6 +41,7 @@ import org.apache.s4.core.window.SlotFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.codahale.metrics.MetricRegistry;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -110,6 +111,10 @@ public abstract class App {
     @Inject
     private void initSerDeser() {
         this.serDeser = serDeserFactory.createSerializerDeserializer(getClass().getClassLoader());
+    }
+
+    public MetricRegistry getMetricRegistry() {
+        return metrics.getMetricRegistry();
     }
 
     /**

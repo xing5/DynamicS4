@@ -19,18 +19,20 @@ package org.apache.s4.benchmark.prodcon;
 
 import java.io.File;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.s4.base.Event;
 import org.apache.s4.base.KeyFinder;
+import org.apache.s4.base.util.S4MetricsRegistry;
 import org.apache.s4.comm.topology.ZkClient;
 import org.apache.s4.core.App;
 
+import com.codahale.metrics.ConsoleReporter;
+import com.codahale.metrics.CsvReporter;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import com.yammer.metrics.reporting.ConsoleReporter;
-import com.yammer.metrics.reporting.CsvReporter;
 
 public class ProducerConsumerApp extends App {
 
@@ -52,8 +54,13 @@ public class ProducerConsumerApp extends App {
                 throw new RuntimeException("Cannot create log dir " + logDirectory.getAbsolutePath());
             }
         }
-        CsvReporter.enable(logDirectory, 10, TimeUnit.SECONDS);
-        ConsoleReporter.enable(10, TimeUnit.SECONDS);
+        CsvReporter reporter = CsvReporter.forRegistry(S4MetricsRegistry.getMr()).formatFor(Locale.CANADA)
+                .convertRatesTo(TimeUnit.SECONDS).convertDurationsTo(TimeUnit.MILLISECONDS).build(logDirectory);
+        reporter.start(10, TimeUnit.SECONDS);
+
+        ConsoleReporter reporter1 = ConsoleReporter.forRegistry(S4MetricsRegistry.getMr())
+                .convertRatesTo(TimeUnit.SECONDS).convertDurationsTo(TimeUnit.MILLISECONDS).build();
+        reporter1.start(10, TimeUnit.SECONDS);
 
         SimplePE1 simplePE1 = createPE(SimplePE1.class, "simplePE1");
         ZkClient zkClient = new ZkClient(zkString);

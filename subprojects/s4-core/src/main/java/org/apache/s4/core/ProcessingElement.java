@@ -34,6 +34,7 @@ import java.util.concurrent.TimeUnit;
 import net.jcip.annotations.ThreadSafe;
 
 import org.apache.s4.base.Event;
+import org.apache.s4.base.util.S4MetricsRegistry;
 import org.apache.s4.core.ft.CheckpointId;
 import org.apache.s4.core.ft.CheckpointingConfig;
 import org.apache.s4.core.ft.CheckpointingConfig.CheckpointingMode;
@@ -43,6 +44,8 @@ import org.apache.s4.core.gen.OverloadDispatcherGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
 import com.google.common.base.Preconditions;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -52,9 +55,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.MapMaker;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.yammer.metrics.Metrics;
-import com.yammer.metrics.core.Timer;
-import com.yammer.metrics.core.TimerContext;
 
 /**
  * <p>
@@ -186,7 +186,8 @@ public abstract class ProcessingElement implements Cloneable {
         this();
         setApp(app);
         if (app.measurePEProcessingTime) {
-            processingTimer = Metrics.newTimer(getClass(), getClass().getName() + "-pe-processing-time");
+            processingTimer = S4MetricsRegistry.getMr().timer(
+                    MetricRegistry.name(getClass(), getClass().getName() + "-pe-processing-time"));
         }
 
     }
@@ -451,7 +452,7 @@ public abstract class ProcessingElement implements Cloneable {
     }
 
     protected void handleInputEvent(Event event) {
-        TimerContext timerContext = null;
+        Timer.Context timerContext = null;
         if (processingTimer != null) {
             // if timing enabled
             timerContext = processingTimer.time();
