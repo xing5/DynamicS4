@@ -18,7 +18,6 @@
 package org.apache.s4.comm.util;
 
 import org.apache.s4.base.util.S4MetricsRegistry;
-import org.apache.s4.comm.tcp.TCPEmitter;
 import org.apache.s4.comm.topology.Cluster;
 
 import com.codahale.metrics.Meter;
@@ -31,8 +30,7 @@ public class EmitterMetrics {
         emittersMeters = new Meter[cluster.getPhysicalCluster().getPartitionCount()];
         for (int i = 0; i < cluster.getPhysicalCluster().getPartitionCount(); i++) {
             emittersMeters[i] = S4MetricsRegistry.getMr().meter(
-                    MetricRegistry.name(TCPEmitter.class, "event-emitted@" + cluster.getPhysicalCluster().getName()
-                            + "@partition-" + i, "event-emitted"));
+                    MetricRegistry.name("event-emitted", cluster.getPhysicalCluster().getName() + "@partition-" + i));
         }
     }
 

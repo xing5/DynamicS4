@@ -30,9 +30,6 @@ import org.apache.s4.base.Emitter;
 import org.apache.s4.base.util.S4MetricsRegistry;
 import org.apache.s4.comm.topology.Assignment;
 import org.apache.s4.core.ProcessingElement;
-import org.apache.s4.core.ReceiverImpl;
-import org.apache.s4.core.RemoteSender;
-import org.apache.s4.core.SenderImpl;
 import org.apache.s4.core.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -79,22 +76,19 @@ public class S4Metrics {
 
     static List<Meter> partitionSenderMeters = Lists.newArrayList();
 
-    private final Meter eventMeter = mr
-            .meter(MetricRegistry.name(ReceiverImpl.class, "received-events", "event-count"));
-    private final Meter bytesMeter = mr.meter(MetricRegistry.name(ReceiverImpl.class, "received-bytes", "bytes-count"));
+    private final Meter eventMeter = mr.meter(MetricRegistry.name("received", "event-count"));
+    private final Meter bytesMeter = mr.meter(MetricRegistry.name("received", "bytes-count"));
 
-    private final Meter localEventsMeter = mr.meter(MetricRegistry.name(Stream.class, "sent-local", "sent-local"));
-    private final Meter remoteEventsMeter = mr.meter(MetricRegistry.name(Stream.class, "sent-remote", "sent-remote"));
+    private final Meter localEventsMeter = mr.meter(MetricRegistry.name("sent", "sent-local"));
+    private final Meter remoteEventsMeter = mr.meter(MetricRegistry.name("sent", "sent-remote"));
 
     private Meter[] senderMeters;
 
     private final Map<String, Meter> dequeuingStreamMeters = Maps.newHashMap();
     private final Map<String, Meter> droppedStreamMeters = Maps.newHashMap();
     private final Map<String, Meter> streamQueueFullMeters = Maps.newHashMap();
-    private final Meter droppedInSenderMeter = mr.meter(MetricRegistry.name(SenderImpl.class, "dropped@sender",
-            "dropped@sender"));
-    private final Meter droppedInRemoteSenderMeter = mr.meter(MetricRegistry.name(SenderImpl.class,
-            "dropped@remote-sender", "dropped@remote-sender"));
+    private final Meter droppedInSenderMeter = mr.meter(MetricRegistry.name("dropped", "dropped@sender"));
+    private final Meter droppedInRemoteSenderMeter = mr.meter(MetricRegistry.name("droppedr", "dropped@remote-sender"));
 
     private final Map<String, Meter[]> remoteSenderMeters = Maps.newHashMap();
 
@@ -145,7 +139,7 @@ public class S4Metrics {
         senderMeters = new Meter[emitter.getPartitionCount()];
         // int localPartitionId = assignment.assignClusterNode().getPartition();
         for (int i = 0; i < senderMeters.length; i++) {
-            senderMeters[i] = mr.meter(MetricRegistry.name(SenderImpl.class, "sender", "sent-to-" + (i)));
+            senderMeters[i] = mr.meter(MetricRegistry.name("sender", "sent-to-" + (i)));
         }
         mr.register(MetricRegistry.name(Stream.class, "local-vs-remote"), new Gauge<Double>() {
             @Override
@@ -159,30 +153,27 @@ public class S4Metrics {
 
     public void createCacheGauges(ProcessingElement prototype, final LoadingCache<String, ProcessingElement> cache) {
 
-        mr.register(MetricRegistry.name(prototype.getClass(), prototype.getClass().getName() + "-cache-entries"),
-                new Gauge<Long>() {
+        mr.register(MetricRegistry.name(prototype.getClass().getName() + "-cache-entries"), new Gauge<Long>() {
 
-                    @Override
-                    public Long getValue() {
-                        return cache.size();
-                    }
-                });
-        mr.register(MetricRegistry.name(prototype.getClass(), prototype.getClass().getName() + "-cache-evictions"),
-                new Gauge<Long>() {
+            @Override
+            public Long getValue() {
+                return cache.size();
+            }
+        });
+        mr.register(MetricRegistry.name(prototype.getClass().getName() + "-cache-evictions"), new Gauge<Long>() {
 
-                    @Override
-                    public Long getValue() {
-                        return cache.stats().evictionCount();
-                    }
-                });
-        mr.register(MetricRegistry.name(prototype.getClass(), prototype.getClass().getName() + "-cache-misses"),
-                new Gauge<Long>() {
+            @Override
+            public Long getValue() {
+                return cache.stats().evictionCount();
+            }
+        });
+        mr.register(MetricRegistry.name(prototype.getClass().getName() + "-cache-misses"), new Gauge<Long>() {
 
-                    @Override
-                    public Long getValue() {
-                        return cache.stats().missCount();
-                    }
-                });
+            @Override
+            public Long getValue() {
+                return cache.stats().missCount();
+            }
+        });
     }
 
     public void receivedEventFromCommLayer(int bytes) {
@@ -220,10 +211,9 @@ public class S4Metrics {
 
     public void createStreamMeters(String name) {
         // TODO avoid maps to avoid map lookups?
-        dequeuingStreamMeters.put(name, mr.meter(MetricRegistry.name(Stream.class, "dequeued@" + name, "dequeued")));
-        droppedStreamMeters.put(name, mr.meter(MetricRegistry.name(Stream.class, "dropped@" + name, "dropped")));
-        streamQueueFullMeters.put(name,
-                mr.meter(MetricRegistry.name(Stream.class, "stream-full@" + name, "stream-full")));
+        dequeuingStreamMeters.put(name, mr.meter(MetricRegistry.name("dequeued@" + name)));
+        droppedStreamMeters.put(name, mr.meter(MetricRegistry.name("dropped@" + name)));
+        streamQueueFullMeters.put(name, mr.meter(MetricRegistry.name("stream-full@" + name)));
     }
 
     public void dequeuedEvent(String name) {
@@ -237,8 +227,7 @@ public class S4Metrics {
     public void createRemoteStreamMeters(String remoteClusterName, int partitionCount) {
         Meter[] meters = new Meter[partitionCount];
         for (int i = 0; i < partitionCount; i++) {
-            meters[i] = mr.meter(MetricRegistry.name(RemoteSender.class, "remote-sender@" + remoteClusterName
-                    + "@partition-" + i, "sent"));
+            meters[i] = mr.meter(MetricRegistry.name("remote-sender", remoteClusterName + "@partition-" + i));
         }
         synchronized (remoteSenderMeters) {
             remoteSenderMeters.put(remoteClusterName, meters);
@@ -253,17 +242,13 @@ public class S4Metrics {
     public static class CheckpointingMetrics {
 
         static Meter rejectedSerializationTask = S4MetricsRegistry.getMr().meter(
-                MetricRegistry.name(CheckpointingMetrics.class, "checkpointing-rejected-serialization-task",
-                        "checkpointing-rejected-serialization-task"));
+                MetricRegistry.name("checkpointing", "checkpointing-rejected-serialization-task"));
         static Meter rejectedStorageTask = S4MetricsRegistry.getMr().meter(
-                MetricRegistry.name(CheckpointingMetrics.class, "checkpointing-rejected-storage-task",
-                        "checkpointing-rejected-storage-task"));
+                MetricRegistry.name("checkpointing", "checkpointing-rejected-storage-task"));
         static Meter fetchedCheckpoint = S4MetricsRegistry.getMr().meter(
-                MetricRegistry.name(CheckpointingMetrics.class, "checkpointing-fetched-checkpoint",
-                        "checkpointing-fetched-checkpoint"));
+                MetricRegistry.name("checkpointing", "checkpointing-fetched-checkpoint"));
         static Meter fetchedCheckpointFailure = S4MetricsRegistry.getMr().meter(
-                MetricRegistry.name(CheckpointingMetrics.class, "checkpointing-fetched-checkpoint-failed",
-                        "checkpointing-fetched-checkpoint-failed"));
+                MetricRegistry.name("checkpointing", "checkpointing-fetched-checkpoint-failed"));
 
         public static void rejectedSerializationTask() {
             rejectedSerializationTask.mark();
