@@ -24,17 +24,15 @@ import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 
 public class EmitterMetrics {
-    private final Meter[] emittersMeters;
+    private Meter emittersMeters;
 
     public EmitterMetrics(Cluster cluster) {
-        emittersMeters = new Meter[cluster.getPhysicalCluster().getPartitionCount()];
-        for (int i = 0; i < cluster.getPhysicalCluster().getPartitionCount(); i++) {
-            emittersMeters[i] = S4MetricsRegistry.getMr().meter(
-                    MetricRegistry.name("event-emitted", cluster.getPhysicalCluster().getName()));
-        }
+        emittersMeters = S4MetricsRegistry.getMr().meter(
+                MetricRegistry.name("event-emitted", cluster.getPhysicalCluster().getName()));
+
     }
 
     public void sentMessage(int partitionId) {
-        emittersMeters[partitionId].mark();
+        emittersMeters.mark();
     }
 }

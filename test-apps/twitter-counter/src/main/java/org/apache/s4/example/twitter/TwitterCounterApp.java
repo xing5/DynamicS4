@@ -123,7 +123,7 @@ public class TwitterCounterApp extends App {
     }
 
     private void prepareMetricsOutputs() throws IOException {
-        final Graphite graphite = new Graphite(new InetSocketAddress("10.1.1.2", 2003));
+        final Graphite graphite = new Graphite(new InetSocketAddress("10.1.1.3", 2003));
         final GraphiteReporter reporter = GraphiteReporter.forRegistry(this.getMetricRegistry()).prefixedWith("S4-" + getClusterName())
                 .convertRatesTo(TimeUnit.SECONDS).convertDurationsTo(TimeUnit.MILLISECONDS)
                 .filter(MetricFilter.ALL).build(graphite);
