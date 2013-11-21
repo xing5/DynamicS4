@@ -68,12 +68,12 @@ public class TwitterCounterApp extends App {
     private void startStream() throws Exception{
         // Read the DAG distribution and start the stream
         if (getClusterName().equals("cluster1")) {
-            logger.debug("Cluster1 starts receiving RawStatus and TopicSeen.");
+            logger.debug("Cluster1 starts receiving RawStatus ");
             activateInputStream(rawInputStreamName);
-            activateInputStream(topicSeenStreamName);
         }
         else if (getClusterName().equals("cluster3")) {
-            logger.debug("Cluster3 starts receiving AggregatedTopic");
+            logger.debug("Cluster3 starts receiving TopicSeen and AggregatedTopic");
+            activateInputStream(topicSeenStreamName);
             activateInputStream(aggregatedTopicStreamName);
         }
     }
@@ -124,7 +124,7 @@ public class TwitterCounterApp extends App {
 
     private void prepareMetricsOutputs() throws IOException {
         final Graphite graphite = new Graphite(new InetSocketAddress("10.1.1.2", 2003));
-        final GraphiteReporter reporter = GraphiteReporter.forRegistry(this.getMetricRegistry()).prefixedWith("S4-" + getClusterName() + "-" + getPartitionId())
+        final GraphiteReporter reporter = GraphiteReporter.forRegistry(this.getMetricRegistry()).prefixedWith("S4-" + getClusterName())
                 .convertRatesTo(TimeUnit.SECONDS).convertDurationsTo(TimeUnit.MILLISECONDS)
                 .filter(MetricFilter.ALL).build(graphite);
         reporter.start(1, TimeUnit.MINUTES);

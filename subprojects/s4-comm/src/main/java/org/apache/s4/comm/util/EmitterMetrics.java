@@ -30,7 +30,7 @@ public class EmitterMetrics {
         emittersMeters = new Meter[cluster.getPhysicalCluster().getPartitionCount()];
         for (int i = 0; i < cluster.getPhysicalCluster().getPartitionCount(); i++) {
             emittersMeters[i] = S4MetricsRegistry.getMr().meter(
-                    MetricRegistry.name("event-emitted", cluster.getPhysicalCluster().getName() + "@partition-" + i));
+                    MetricRegistry.name("event-emitted", cluster.getPhysicalCluster().getName()));
         }
     }
 

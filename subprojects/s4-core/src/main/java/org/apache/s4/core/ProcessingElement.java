@@ -187,7 +187,7 @@ public abstract class ProcessingElement implements Cloneable {
         setApp(app);
         if (app.measurePEProcessingTime) {
             processingTimer = S4MetricsRegistry.getMr().timer(
-                    MetricRegistry.name(getClass(), getClass().getName() + "-pe-processing-time"));
+                    MetricRegistry.name("PE", getClass().getSimpleName() + "-pe-processing-time"));
         }
 
     }

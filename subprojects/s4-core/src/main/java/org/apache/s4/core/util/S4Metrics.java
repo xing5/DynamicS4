@@ -30,7 +30,6 @@ import org.apache.s4.base.Emitter;
 import org.apache.s4.base.util.S4MetricsRegistry;
 import org.apache.s4.comm.topology.Assignment;
 import org.apache.s4.core.ProcessingElement;
-import org.apache.s4.core.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -79,16 +78,16 @@ public class S4Metrics {
     private final Meter eventMeter = mr.meter(MetricRegistry.name("received", "event-count"));
     private final Meter bytesMeter = mr.meter(MetricRegistry.name("received", "bytes-count"));
 
-    private final Meter localEventsMeter = mr.meter(MetricRegistry.name("sent", "sent-local"));
-    private final Meter remoteEventsMeter = mr.meter(MetricRegistry.name("sent", "sent-remote"));
+    private final Meter localEventsMeter = mr.meter(MetricRegistry.name("same-cluster-sent", "sent-local"));
+    private final Meter remoteEventsMeter = mr.meter(MetricRegistry.name("same-cluster-sent", "sent-remote"));
 
     private Meter[] senderMeters;
 
     private final Map<String, Meter> dequeuingStreamMeters = Maps.newHashMap();
     private final Map<String, Meter> droppedStreamMeters = Maps.newHashMap();
     private final Map<String, Meter> streamQueueFullMeters = Maps.newHashMap();
-    private final Meter droppedInSenderMeter = mr.meter(MetricRegistry.name("dropped", "dropped@sender"));
-    private final Meter droppedInRemoteSenderMeter = mr.meter(MetricRegistry.name("droppedr", "dropped@remote-sender"));
+    private final Meter droppedInSenderMeter = mr.meter(MetricRegistry.name("same-cluster-sent", "dropped@sender"));
+    private final Meter droppedInRemoteSenderMeter = mr.meter("remote-sender-dropped");
 
     private final Map<String, Meter[]> remoteSenderMeters = Maps.newHashMap();
 
@@ -141,7 +140,7 @@ public class S4Metrics {
         for (int i = 0; i < senderMeters.length; i++) {
             senderMeters[i] = mr.meter(MetricRegistry.name("sender", "sent-to-" + (i)));
         }
-        mr.register(MetricRegistry.name(Stream.class, "local-vs-remote"), new Gauge<Double>() {
+        mr.register("local-vs-remote", new Gauge<Double>() {
             @Override
             public Double getValue() {
                 // this will return NaN if divider is zero
@@ -153,27 +152,30 @@ public class S4Metrics {
 
     public void createCacheGauges(ProcessingElement prototype, final LoadingCache<String, ProcessingElement> cache) {
 
-        mr.register(MetricRegistry.name(prototype.getClass().getName() + "-cache-entries"), new Gauge<Long>() {
+        mr.register(MetricRegistry.name("PE", prototype.getClass().getSimpleName() + "-cache-entries"),
+                new Gauge<Long>() {
 
-            @Override
-            public Long getValue() {
-                return cache.size();
-            }
-        });
-        mr.register(MetricRegistry.name(prototype.getClass().getName() + "-cache-evictions"), new Gauge<Long>() {
+                    @Override
+                    public Long getValue() {
+                        return cache.size();
+                    }
+                });
+        mr.register(MetricRegistry.name("PE", prototype.getClass().getSimpleName() + "-cache-evictions"),
+                new Gauge<Long>() {
 
-            @Override
-            public Long getValue() {
-                return cache.stats().evictionCount();
-            }
-        });
-        mr.register(MetricRegistry.name(prototype.getClass().getName() + "-cache-misses"), new Gauge<Long>() {
+                    @Override
+                    public Long getValue() {
+                        return cache.stats().evictionCount();
+                    }
+                });
+        mr.register(MetricRegistry.name("PE", prototype.getClass().getSimpleName() + "-cache-misses"),
+                new Gauge<Long>() {
 
-            @Override
-            public Long getValue() {
-                return cache.stats().missCount();
-            }
-        });
+                    @Override
+                    public Long getValue() {
+                        return cache.stats().missCount();
+                    }
+                });
     }
 
     public void receivedEventFromCommLayer(int bytes) {
@@ -211,9 +213,9 @@ public class S4Metrics {
 
     public void createStreamMeters(String name) {
         // TODO avoid maps to avoid map lookups?
-        dequeuingStreamMeters.put(name, mr.meter(MetricRegistry.name("dequeued@" + name)));
-        droppedStreamMeters.put(name, mr.meter(MetricRegistry.name("dropped@" + name)));
-        streamQueueFullMeters.put(name, mr.meter(MetricRegistry.name("stream-full@" + name)));
+        dequeuingStreamMeters.put(name, mr.meter(MetricRegistry.name(name, "dequeued")));
+        droppedStreamMeters.put(name, mr.meter(MetricRegistry.name(name, "dropped")));
+        // streamQueueFullMeters.put(name, mr.meter(MetricRegistry.name("stream-full@" + name)));
     }
 
     public void dequeuedEvent(String name) {

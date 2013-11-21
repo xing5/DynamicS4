@@ -20,14 +20,21 @@ package org.apache.s4.example.twitter;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.util.Properties;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.s4.base.Event;
 import org.apache.s4.core.adapter.AdapterApp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.codahale.metrics.MetricFilter;
+import com.codahale.metrics.graphite.Graphite;
+import com.codahale.metrics.graphite.GraphiteReporter;
 
 import twitter4j.Status;
 import twitter4j.StatusDeletionNotice;
@@ -57,6 +64,11 @@ public class TwitterInputAdapter extends AdapterApp {
     @Override
     protected void onInit() {
         super.onInit();
+        try {
+            prepareMetricsOutputs();
+        } catch (Exception e) {
+            logger.error("Cannot start metrics");
+        }
         t = new Thread(new Dequeuer());
     }
 
@@ -83,12 +95,12 @@ public class TwitterInputAdapter extends AdapterApp {
 
             @Override
             public void onException(Exception ex) {
-                logger.error("error", ex);
+//                logger.error("error", ex);
             }
 
             @Override
             public void onTrackLimitationNotice(int numberOfLimitedStatuses) {
-                logger.error("error");
+//                logger.error("error");
             }
 
             @Override
@@ -99,17 +111,17 @@ public class TwitterInputAdapter extends AdapterApp {
 
             @Override
             public void onScrubGeo(long userId, long upToStatusId) {
-                logger.error("error");
+//                logger.error("error");
             }
             
             @Override
             public void onStallWarning(StallWarning arg0) {
-                logger.error("error");
+//                logger.error("error");
             }
             
             @Override
             public void onDeletionNotice(StatusDeletionNotice statusDeletionNotice) {
-                logger.error("error");
+//                logger.error("error");
             }
         };
         twitterStream.addListener(statusListener);
@@ -127,6 +139,14 @@ public class TwitterInputAdapter extends AdapterApp {
         }
     }
 
+    private void prepareMetricsOutputs() throws IOException {
+        final Graphite graphite = new Graphite(new InetSocketAddress("10.1.1.2", 2003));
+        final GraphiteReporter reporter = GraphiteReporter.forRegistry(this.getMetricRegistry()).prefixedWith("S4-" + getClusterName())
+                .convertRatesTo(TimeUnit.SECONDS).convertDurationsTo(TimeUnit.MILLISECONDS)
+                .filter(MetricFilter.ALL).build(graphite);
+        reporter.start(1, TimeUnit.MINUTES);
+    }
+
     class Dequeuer implements Runnable {
 
         @Override
@@ -136,10 +156,12 @@ public class TwitterInputAdapter extends AdapterApp {
                     //logger.debug("try sending a event.");
                     Status status = messageQueue.take();
                     Event event = new Event();
-                    event.put("statusText", String.class, status.getText());//"#woailuo haha");
+                    for (int i = 1; i < 200; i++) {
+                        event.put("statusText", String.class, status.getText());//"#woailuo haha");
 //                    event.put("statusText", String.class, "#woailuo haha");
 //                    Thread.sleep(1000);
-                    getRemoteStream().put(event);
+                        getRemoteStream().put(event);
+                    }
                 } catch (Exception e) {
 
                 }
