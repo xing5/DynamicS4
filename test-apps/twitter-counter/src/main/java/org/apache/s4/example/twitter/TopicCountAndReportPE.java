@@ -60,10 +60,6 @@ public class TopicCountAndReportPE extends DynamicProcessingElement {
         }
         //logger.info("Get new topic [{}], count [{}]", getId(), count);
         count += event.get("count", int.class);
-        Event topicEvent = new Event();
-        topicEvent.put("topic", String.class, getId());
-        topicEvent.put("count", int.class, count);
-        downStream.put(topicEvent);
     }
 
     @Override
@@ -73,6 +69,10 @@ public class TopicCountAndReportPE extends DynamicProcessingElement {
     }
 
     public void onTime() {
+        Event topicEvent = new Event();
+        topicEvent.put("topic", String.class, getId());
+        topicEvent.put("count", int.class, count);
+        downStream.put(topicEvent);
     }
 
     @Override
