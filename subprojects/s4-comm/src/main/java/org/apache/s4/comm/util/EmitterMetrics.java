@@ -17,22 +17,30 @@
  */
 package org.apache.s4.comm.util;
 
+import java.util.Map;
+
 import org.apache.s4.base.util.S4MetricsRegistry;
 import org.apache.s4.comm.topology.Cluster;
 
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
+import com.google.common.collect.Maps;
 
 public class EmitterMetrics {
-    private Meter emittersMeters;
+    private static final Map<String, Meter> emittersMeters = Maps.newHashMap();
+
+    private Meter emitterMeter;
 
     public EmitterMetrics(Cluster cluster) {
-        emittersMeters = S4MetricsRegistry.getMr().meter(
-                MetricRegistry.name("event-emitted", cluster.getPhysicalCluster().getName()));
-
+        String clusterName = cluster.getPhysicalCluster().getName();
+        emitterMeter = emittersMeters.get(clusterName);
+        if (emitterMeter == null) {
+            emitterMeter = S4MetricsRegistry.getMr().meter(MetricRegistry.name("event-emitted", clusterName));
+            emittersMeters.put(clusterName, emitterMeter);
+        }
     }
 
     public void sentMessage(int partitionId) {
-        emittersMeters.mark();
+        emitterMeter.mark();
     }
 }
