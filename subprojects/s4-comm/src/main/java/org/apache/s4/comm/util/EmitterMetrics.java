@@ -28,19 +28,27 @@ import com.google.common.collect.Maps;
 
 public class EmitterMetrics {
     private static final Map<String, Meter> emittersMeters = Maps.newHashMap();
+    private static final Map<String, Meter> emittersFailMeters = Maps.newHashMap();
 
     private Meter emitterMeter;
+    private Meter failMeter;
 
     public EmitterMetrics(Cluster cluster) {
         String clusterName = cluster.getPhysicalCluster().getName();
         emitterMeter = emittersMeters.get(clusterName);
         if (emitterMeter == null) {
             emitterMeter = S4MetricsRegistry.getMr().meter(MetricRegistry.name("event-emitted", clusterName));
+            failMeter = S4MetricsRegistry.getMr().meter(MetricRegistry.name("event-failed", clusterName));
             emittersMeters.put(clusterName, emitterMeter);
+            emittersFailMeters.put(clusterName, failMeter);
         }
     }
 
     public void sentMessage(int partitionId) {
         emitterMeter.mark();
+    }
+
+    public void sentMessageFail(int partitionId) {
+        failMeter.mark();
     }
 }

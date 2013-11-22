@@ -310,6 +310,7 @@ public class TCPEmitter implements Emitter, ClusterChangeListener {
         public void operationComplete(ChannelFuture future) throws Exception {
             writePermits.get(partitionId).release();
             if (!future.isSuccess()) {
+                metrics.sentMessageFail(partitionId);
                 try {
                     // TODO handle possible cluster reconfiguration between send and failure callback
                     logger.warn("Failed to send message to node {} (according to current cluster information)",
