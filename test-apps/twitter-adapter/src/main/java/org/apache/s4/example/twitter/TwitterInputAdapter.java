@@ -156,10 +156,8 @@ public class TwitterInputAdapter extends AdapterApp {
                     //logger.debug("try sending a event.");
                     Status status = messageQueue.take();
                     Event event = new Event();
-                    for (int i = 1; i < 200; i++) {
+                    for (int i = 1; i < 1000; i++) {
                         event.put("statusText", String.class, status.getText());//"#woailuo haha");
-//                    event.put("statusText", String.class, "#woailuo haha");
-//                    Thread.sleep(1000);
                         getRemoteStream().put(event);
                     }
                 } catch (Exception e) {
