@@ -28,11 +28,14 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.s4.base.Event;
+import org.apache.s4.base.util.S4MetricsRegistry;
 import org.apache.s4.core.adapter.AdapterApp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricFilter;
+import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.graphite.Graphite;
 import com.codahale.metrics.graphite.GraphiteReporter;
 
@@ -53,11 +56,12 @@ public class TwitterInputAdapter extends AdapterApp {
     public TwitterInputAdapter() {
     }
 
-    private LinkedBlockingQueue<Status> messageQueue = new LinkedBlockingQueue<Status>();
+    private LinkedBlockingQueue<String> messageQueue = new LinkedBlockingQueue<String>();
 
     protected ServerSocket serverSocket;
 
     private Thread t;
+    private Thread srcStream;
 
     ZipfDistribution zd = new ZipfDistribution(5000, 0.5);
 
@@ -75,70 +79,73 @@ public class TwitterInputAdapter extends AdapterApp {
             logger.error("Cannot start metrics");
         }
         t = new Thread(new Dequeuer());
+        srcStream = new Thread(new ProduceZipf());
     }
 
-    public void connectAndRead() throws Exception {
-
-        ConfigurationBuilder cb = new ConfigurationBuilder();
-        Properties twitterProperties = new Properties();
-        File twitter4jPropsFile = new File(System.getProperty("user.home") + "/twitter4j.properties");
-        if (!twitter4jPropsFile.exists()) {
-            logger.error(
-                    "Cannot find twitter4j.properties file in this location :[{}]. Make sure it is available at this place and includes oauth credentials",
-                    twitter4jPropsFile.getAbsolutePath());
-            return;
-        }
-        twitterProperties.load(new FileInputStream(twitter4jPropsFile));
-
-        cb.setDebugEnabled(false)
-                .setOAuthConsumerKey(twitterProperties.getProperty("oauth.consumerKey"))
-                .setOAuthConsumerSecret(twitterProperties.getProperty("oauth.consumerSecret"))
-                .setOAuthAccessToken(twitterProperties.getProperty("oauth.accessToken"))
-                .setOAuthAccessTokenSecret(twitterProperties.getProperty("oauth.accessTokenSecret"));
-        TwitterStream twitterStream = new TwitterStreamFactory(cb.build()).getInstance();
-        StatusListener statusListener = new StatusListener() {
-
-            @Override
-            public void onException(Exception ex) {
-//                logger.error("error", ex);
-            }
-
-            @Override
-            public void onTrackLimitationNotice(int numberOfLimitedStatuses) {
-//                logger.error("error");
-            }
-
-            @Override
-            public void onStatus(Status status) {
-                messageQueue.add(status);
-
-            }
-
-            @Override
-            public void onScrubGeo(long userId, long upToStatusId) {
-//                logger.error("error");
-            }
-            
-            @Override
-            public void onStallWarning(StallWarning arg0) {
-//                logger.error("error");
-            }
-            
-            @Override
-            public void onDeletionNotice(StatusDeletionNotice statusDeletionNotice) {
-//                logger.error("error");
-            }
-        };
-        twitterStream.addListener(statusListener);
-        twitterStream.sample();
-
-    }
+//    public void connectAndRead() throws Exception {
+//
+//        ConfigurationBuilder cb = new ConfigurationBuilder();
+//        Properties twitterProperties = new Properties();
+//        File twitter4jPropsFile = new File(System.getProperty("user.home") + "/twitter4j.properties");
+//        if (!twitter4jPropsFile.exists()) {
+//            logger.error(
+//                    "Cannot find twitter4j.properties file in this location :[{}]. Make sure it is available at this place and includes oauth credentials",
+//                    twitter4jPropsFile.getAbsolutePath());
+//            return;
+//        }
+//        twitterProperties.load(new FileInputStream(twitter4jPropsFile));
+//
+//        cb.setDebugEnabled(false)
+//                .setOAuthConsumerKey(twitterProperties.getProperty("oauth.consumerKey"))
+//                .setOAuthConsumerSecret(twitterProperties.getProperty("oauth.consumerSecret"))
+//                .setOAuthAccessToken(twitterProperties.getProperty("oauth.accessToken"))
+//                .setOAuthAccessTokenSecret(twitterProperties.getProperty("oauth.accessTokenSecret"));
+//        TwitterStream twitterStream = new TwitterStreamFactory(cb.build()).getInstance();
+//        StatusListener statusListener = new StatusListener() {
+//
+//            @Override
+//            public void onException(Exception ex) {
+////                logger.error("error", ex);
+//            }
+//
+//            @Override
+//            public void onTrackLimitationNotice(int numberOfLimitedStatuses) {
+////                logger.error("error");
+//            }
+//
+//            @Override
+//            public void onStatus(Status status) {
+//                messageQueue.add(status);
+//
+//            }
+//
+//            @Override
+//            public void onScrubGeo(long userId, long upToStatusId) {
+////                logger.error("error");
+//            }
+//            
+//            @Override
+//            public void onStallWarning(StallWarning arg0) {
+////                logger.error("error");
+//            }
+//            
+//            @Override
+//            public void onDeletionNotice(StatusDeletionNotice statusDeletionNotice) {
+////                logger.error("error");
+//            }
+//        };
+//        twitterStream.addListener(statusListener);
+//        twitterStream.sample();
+//
+//    }
 
     @Override
     protected void onStart() {
         try {
             t.start();
+            srcStream.start();
             //connectAndRead();
+            
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -151,6 +158,28 @@ public class TwitterInputAdapter extends AdapterApp {
                 .filter(MetricFilter.ALL).build(graphite);
         reporter.start(1, TimeUnit.MINUTES);
     }
+    
+    class ProduceZipf implements Runnable {
+        
+        private final Meter srcSuccMeter = getMetricRegistry().meter(MetricRegistry.name("event-src", "succ"));
+        private final Meter srcFailMeter = getMetricRegistry().meter(MetricRegistry.name("event-src", "fail"));
+        
+        @Override
+        public void run() {
+            while (true) {
+                try {
+                    String tweet = "This is test #topic" + zd.sample() + " generated by apache zipf distribution.";
+                    for (int i = 1; i < 1000; i++) {
+                        messageQueue.add(tweet);
+                        srcSuccMeter.mark();
+                    }
+                    Thread.sleep(10);
+                } catch (Exception e) {
+                    srcFailMeter.mark();
+                }
+            }
+        }
+    }
 
     class Dequeuer implements Runnable {
 
@@ -160,13 +189,11 @@ public class TwitterInputAdapter extends AdapterApp {
                 try {
                     //logger.debug("try sending a event.");
                     //Status status = messageQueue.take();
+                    String tweet = messageQueue.take();
                     
                     Event event = new Event();
-                    event.put("statusText", String.class, "This is test #topic" + zd.sample() + " generated by apache zipf distribution.");//"#woailuo haha");
-                    for (int i = 1; i < 1000; i++) {
-                        getRemoteStream().put(event);
-                    }
-                    Thread.sleep(10);
+                    event.put("statusText", String.class, tweet);
+                    getRemoteStream().put(event);
                 } catch (Exception e) {
 
                 }
