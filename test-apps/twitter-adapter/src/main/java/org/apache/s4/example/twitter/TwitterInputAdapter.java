@@ -141,7 +141,7 @@ public class TwitterInputAdapter extends AdapterApp {
 
     private void prepareMetricsOutputs() throws IOException {
         final Graphite graphite = new Graphite(new InetSocketAddress("10.1.1.3", 2003));
-        final GraphiteReporter reporter = GraphiteReporter.forRegistry(this.getMetricRegistry()).prefixedWith("S4-" + getClusterName())
+        final GraphiteReporter reporter = GraphiteReporter.forRegistry(this.getMetricRegistry()).prefixedWith("S4-" + getClusterName() + "-" + getPartitionId())
                 .convertRatesTo(TimeUnit.SECONDS).convertDurationsTo(TimeUnit.MILLISECONDS)
                 .filter(MetricFilter.ALL).build(graphite);
         reporter.start(1, TimeUnit.MINUTES);
