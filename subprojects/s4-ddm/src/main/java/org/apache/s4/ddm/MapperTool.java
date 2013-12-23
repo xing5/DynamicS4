@@ -61,14 +61,20 @@ public class MapperTool {
             System.exit(1);
         }
 
-        System.out.println("The stream - cluster pairs: ");
-        System.out.println(mapperArgs.peClusterMap.toString());
+        if (!mapperArgs.daemonParemeters.isEmpty()) {
+            DoDoDaemon d = new DoDoDaemon();
+            d.start();
+        } else {
 
-        try {
-            ZkClient zkClient = new ZkClient(mapperArgs.zkConnectionString, mapperArgs.timeout);
-            mapperArgs.peClusterMap.applyToZooKeeper(zkClient);
-        } catch (Exception e) {
-            System.out.println("apply changes to ZooKeeper failed: " + e.getClass() + " -> " + e.getMessage());
+            System.out.println("The stream - cluster pairs: ");
+            System.out.println(mapperArgs.peClusterMap.toString());
+
+            try {
+                ZkClient zkClient = new ZkClient(mapperArgs.zkConnectionString, mapperArgs.timeout);
+                mapperArgs.peClusterMap.applyToZooKeeper(zkClient);
+            } catch (Exception e) {
+                System.out.println("apply changes to ZooKeeper failed: " + e.getClass() + " -> " + e.getMessage());
+            }
         }
     }
 
@@ -106,6 +112,9 @@ public class MapperTool {
 
         @Parameter(names = "-map", description = "new mapping for stream and cluster", converter = PEClusterMapperConverter.class)
         PEClusterMapper peClusterMap = new PEClusterMapper();
+
+        @Parameter(names = "-d", description = "start daemon")
+        String daemonParemeters = null;
     }
 
     static class Stream {
