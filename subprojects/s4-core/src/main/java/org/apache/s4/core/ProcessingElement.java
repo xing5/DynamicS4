@@ -138,6 +138,7 @@ public abstract class ProcessingElement implements Cloneable {
     transient private boolean isPrototype = true;
     transient private boolean isThreadSafe = false;
     transient private String name = null;
+    transient private String inputStreamName = "";
     transient private boolean isSingleton = false;
     transient long eventCount = 0;
 
@@ -187,7 +188,7 @@ public abstract class ProcessingElement implements Cloneable {
         setApp(app);
         if (app.measurePEProcessingTime) {
             processingTimer = S4MetricsRegistry.getMr().timer(
-                    MetricRegistry.name("PE", getClass().getSimpleName() + "-pe-processing-time"));
+                    MetricRegistry.name(getInputStreamName(), getClass().getSimpleName() + "-pe-processing-time"));
         }
 
     }
@@ -937,6 +938,14 @@ public abstract class ProcessingElement implements Cloneable {
         sb.append("timerInterval=" + timerIntervalInMilliseconds + " ;");
         return sb.toString();
 
+    }
+
+    public String getInputStreamName() {
+        return inputStreamName;
+    }
+
+    public void setInputStreamName(String inputStreamName) {
+        this.inputStreamName = inputStreamName;
     }
 
 }
