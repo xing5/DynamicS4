@@ -946,6 +946,11 @@ public abstract class ProcessingElement implements Cloneable {
 
     public void setInputStreamName(String inputStreamName) {
         this.inputStreamName = inputStreamName;
+        if (app.measurePEProcessingTime) {
+            processingTimer = S4MetricsRegistry.getMr().timer(
+                    MetricRegistry.name(getInputStreamName(), getClass().getSimpleName() + "-pe-processing-time"));
+        }
+
     }
 
 }
