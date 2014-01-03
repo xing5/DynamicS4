@@ -178,7 +178,7 @@ public class TwitterInputAdapter extends AdapterApp {
         final GraphiteReporter reporter = GraphiteReporter.forRegistry(this.getMetricRegistry()).prefixedWith("S4-" + getClusterName() + "-" + getPartitionId())
                 .convertRatesTo(TimeUnit.SECONDS).convertDurationsTo(TimeUnit.MILLISECONDS)
                 .filter(MetricFilter.ALL).build(graphite);
-        reporter.start(1, TimeUnit.MINUTES);
+        reporter.start(6, TimeUnit.SECONDS);
     }
     
     class ProduceZipf implements Runnable {

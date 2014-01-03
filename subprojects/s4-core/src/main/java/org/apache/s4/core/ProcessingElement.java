@@ -186,10 +186,10 @@ public abstract class ProcessingElement implements Cloneable {
     public ProcessingElement(App app) {
         this();
         setApp(app);
-        if (app.measurePEProcessingTime) {
-            processingTimer = S4MetricsRegistry.getMr().timer(
-                    MetricRegistry.name(getInputStreamName(), getClass().getSimpleName() + "-pe-processing-time"));
-        }
+        // if (app.measurePEProcessingTime) {
+        // processingTimer = S4MetricsRegistry.getMr().timer(
+        // MetricRegistry.name(getInputStreamName(), getClass().getSimpleName() + "-pe-processing-time"));
+        // }
 
     }
 

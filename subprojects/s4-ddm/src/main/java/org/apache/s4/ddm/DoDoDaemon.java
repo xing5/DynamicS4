@@ -7,7 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class DoDoDaemon {
-    static Logger logger = LoggerFactory.getLogger(MapperTool.class);
+    static Logger logger = LoggerFactory.getLogger(DoDoDaemon.class);
     final private Timer triggerTimer;
 
     public DoDoDaemon() {
