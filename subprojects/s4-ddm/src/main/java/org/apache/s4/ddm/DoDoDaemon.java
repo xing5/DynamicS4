@@ -18,13 +18,24 @@ public class DoDoDaemon {
 
         @Override
         public void run() {
-            System.out.println("hi");
+            System.out.println("Hi!");
+            HealthStats h = new HealthStats();
+            try {
+                h.initData();
+                h.printData();
+                h.orderClusters();
+                h.printOrderedClusters();
+                h.analyze();
+            } catch (Exception e) {
+                System.out.println("error:" + e.getMessage());
+            }
         }
     }
 
     protected void start() {
+
         if (triggerTimer != null) {
-            triggerTimer.scheduleAtFixedRate(new OnTimeTask(), 0, 2 * 1000);
+            triggerTimer.scheduleAtFixedRate(new OnTimeTask(), 0, 60 * 1000);
         }
 
     }
