@@ -61,7 +61,7 @@ public class MapperTool {
             System.exit(1);
         }
 
-        if (mapperArgs.daemonParemeters == null || !mapperArgs.daemonParemeters.isEmpty()) {
+        if (mapperArgs.daemonParemeters != null && !mapperArgs.daemonParemeters.isEmpty()) {
             DoDoDaemon d = new DoDoDaemon();
             d.start();
         } else {
