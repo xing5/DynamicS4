@@ -61,8 +61,9 @@ public class MapperTool {
             System.exit(1);
         }
 
+        ZkClient zkClient = new ZkClient(mapperArgs.zkConnectionString, mapperArgs.timeout);
         if (mapperArgs.daemonParemeters != null && !mapperArgs.daemonParemeters.isEmpty()) {
-            DoDoDaemon d = new DoDoDaemon();
+            DoDoDaemon d = new DoDoDaemon(zkClient, mapperArgs.daemonParemeters);
             d.start();
         } else {
 
@@ -70,7 +71,6 @@ public class MapperTool {
             System.out.println(mapperArgs.peClusterMap.toString());
 
             try {
-                ZkClient zkClient = new ZkClient(mapperArgs.zkConnectionString, mapperArgs.timeout);
                 mapperArgs.peClusterMap.applyToZooKeeper(zkClient);
             } catch (Exception e) {
                 System.out.println("apply changes to ZooKeeper failed: " + e.getClass() + " -> " + e.getMessage());

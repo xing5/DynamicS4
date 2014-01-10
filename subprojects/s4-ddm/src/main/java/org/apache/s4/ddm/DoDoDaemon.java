@@ -3,15 +3,18 @@ package org.apache.s4.ddm;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import org.apache.s4.comm.topology.ZkClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class DoDoDaemon {
     static Logger logger = LoggerFactory.getLogger(DoDoDaemon.class);
     final private Timer triggerTimer;
+    ZkClient zk = null;
 
-    public DoDoDaemon() {
+    public DoDoDaemon(ZkClient zkClient, String paras) {
         triggerTimer = new Timer();
+        zk = zkClient;
     }
 
     private class OnTimeTask extends TimerTask {
@@ -25,7 +28,11 @@ public class DoDoDaemon {
                 h.printData();
                 h.orderClusters();
                 h.printOrderedClusters();
-                h.analyze();
+                PEClusterMapper pm = h.analyze();
+                if (pm != null) {
+                    pm.applyToZooKeeper(zk);
+                    Thread.sleep(10 * 60 * 1000);
+                }
             } catch (Exception e) {
                 System.out.println("error:" + e.getMessage());
             }
