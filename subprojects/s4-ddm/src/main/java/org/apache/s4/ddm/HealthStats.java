@@ -61,7 +61,7 @@ public class HealthStats {
     List<ClusterStats> orderedClusters = new ArrayList<ClusterStats>();
     private double CORRELATION_THRESHOLD = 0.0;
     private double DIFFERENCE_THRESHOLD = 1000;
-    private double CAPACITY_THRESHOLD = 3000;
+    private double CAPACITY_THRESHOLD = 1000;
 
     public HealthStats() {
     }
@@ -87,7 +87,7 @@ public class HealthStats {
             logger.debug("{}-{} doesn't exists!", clusterName, streamName);
             return 0.0;
         }
-        return stats.get(0).eventsCount;
+        return stats.get(0).eventsRound;
     }
 
     private double getClusterNodesNum(String clusterName) {
@@ -98,7 +98,7 @@ public class HealthStats {
         }
         double num = 0.0;
         for (List<PeLoadStat> stats : streams.values()) {
-            double tmpNum = stats.get(0).eventsCount;
+            double tmpNum = stats.get(0).eventsRound;
             if (tmpNum > num) {
                 num = tmpNum;
             }
@@ -217,7 +217,12 @@ public class HealthStats {
     }
 
     public double correlation(List<Double> list1, List<Double> list2) {
-        return cov(list1, list2) / (Math.sqrt(var(list1)) * Math.sqrt(var(list2)));
+        double var1 = var(list1);
+        double var2 = var(list2);
+        if (var1 == 0 || var2 == 0) {
+            return 0.0;
+        }
+        return cov(list1, list2) / (Math.sqrt(var1) * Math.sqrt(var2));
     }
 
     public void orderClusters() {
@@ -237,20 +242,26 @@ public class HealthStats {
             // find a PE to transmit
             List<ClusterStats> orderedStreams = new ArrayList<ClusterStats>();
             for (String streamName : mapStats.get(cluster1).keySet()) {
-                logger.debug("compute " + streamName);
                 double corrOfStream1 = correlation(getLoadSeriesOfStream(cluster1, streamName),
                         getLoadSeriesOfClusterExceptStream(cluster1, streamName));
                 double corrOfStream2 = correlation(getLoadSeriesOfStream(cluster1, streamName),
                         getLoadSeriesOfCluster(cluster2));
                 orderedStreams.add(new ClusterStats(streamName, (corrOfStream1 - corrOfStream2) / 2));
+                logger.debug("corr1: " + corrOfStream1 + ", corr2: " + corrOfStream2);
+                logger.debug("compute " + streamName + ": " + (corrOfStream1 - corrOfStream2) / 2);
             }
             Collections.sort(orderedStreams);
             String streamToBeMoved = orderedStreams.get(orderedStreams.size() - 1).name;
             // check the cluster utilization to avoid infinite PE transmission
             double destLoad = averageLoad(getLoadSeriesOfStream(cluster1, streamToBeMoved))
                     * getStreamNodesNum(cluster1, streamToBeMoved) / getClusterNodesNum(cluster2);
+            logger.debug("Load of {} is " + averageLoad(getLoadSeriesOfStream(cluster1, streamToBeMoved)) + ", "
+                    + cluster1 + " num is " + getStreamNodesNum(cluster1, streamToBeMoved) + " and " + cluster2
+                    + " num is " + getClusterNodesNum(cluster2), streamToBeMoved);
+
             if (destLoad + averageLoad(list2) > CAPACITY_THRESHOLD) {
                 logger.debug("Decision: do not move {} to {} because it will be overload", streamToBeMoved, cluster2);
+                return;
             }
             logger.debug("Decision: move {} to {}", streamToBeMoved, cluster2);
             Map<String, StreamFlow> tmpMap = pm.clusterMap.get(streamToBeMoved);
