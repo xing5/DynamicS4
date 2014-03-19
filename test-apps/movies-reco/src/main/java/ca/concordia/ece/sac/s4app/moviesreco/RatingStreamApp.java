@@ -58,8 +58,7 @@ public class RatingStreamApp extends AdapterApp {
     }
 
     private void readConfig() throws Exception {
-        File configFile = new File(System.getProperty("user.home")
-                + "/moviereco.properties");
+        File configFile = new File("moviereco.properties");
         if (!configFile.exists()) {
             logger.error(
                     "Cannot find moviereco.properties file in this location :[{}]. Make sure it is available at this place and includes oauth credentials",
