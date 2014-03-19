@@ -39,6 +39,7 @@ public class RecoOutputPE extends ProcessingElement {
                 event.get("top", String.class));
     }
 
+    @Override
     public void onTime() {
         File f = new File("MovieReco.txt");
 
@@ -53,7 +54,7 @@ public class RecoOutputPE extends ProcessingElement {
         }
         sb.append("\n");
         try {
-            Files.append(sb.toString(), f, Charsets.UTF_8);
+            Files.write(sb.toString(), f, Charsets.UTF_8);
             logger.info("Wrote Recommendations to file [{}] ",
                     f.getAbsolutePath());
         } catch (IOException e) {
