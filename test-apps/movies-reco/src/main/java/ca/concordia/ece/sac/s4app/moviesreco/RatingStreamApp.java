@@ -13,7 +13,6 @@ import java.util.concurrent.TimeUnit;
 import org.apache.s4.base.Event;
 import org.apache.s4.base.GenericKeyFinder;
 import org.apache.s4.base.KeyFinder;
-import org.apache.s4.core.adapter.AdapterApp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,7 +48,7 @@ public class RatingStreamApp extends AdapterApp {
             KeyFinder<Event> kfUser = new GenericKeyFinder<Event>("uId",
                     Event.class);
             setKeyFinder(kfUser);
-            // prepareMetricsOutputs();
+            prepareMetricsOutputs();
         } catch (Exception e) {
             logger.error("Cannot start metrics");
         }
@@ -85,14 +84,16 @@ public class RatingStreamApp extends AdapterApp {
 
     private void prepareMetricsOutputs() throws IOException {
         final Graphite graphite = new Graphite(new InetSocketAddress(
-                "10.1.1.2", 2003));
+                settings.getProperty("metrics.master"), 2003));
         final GraphiteReporter reporter = GraphiteReporter
                 .forRegistry(this.getMetricRegistry())
                 .prefixedWith("S4-" + getClusterName() + "-" + getPartitionId())
                 .convertRatesTo(TimeUnit.SECONDS)
                 .convertDurationsTo(TimeUnit.MILLISECONDS)
                 .filter(MetricFilter.ALL).build(graphite);
-        reporter.start(6, TimeUnit.SECONDS);
+        reporter.start(
+                Integer.parseInt(settings.getProperty("metrics.interval")),
+                TimeUnit.SECONDS);
     }
 
     class ProduceRatingStream implements Runnable {
@@ -117,7 +118,11 @@ public class RatingStreamApp extends AdapterApp {
                         messageQueue.add(line);
                         srcSuccMeter.mark();
                         line = br.readLine();
-                        Thread.sleep(1000);
+                        int interval = Integer.parseInt(settings
+                                .getProperty("moviereco.interval"));
+                        if (interval > 0) {
+                            Thread.sleep(interval);
+                        }
                     }
                     br.close();
                 }

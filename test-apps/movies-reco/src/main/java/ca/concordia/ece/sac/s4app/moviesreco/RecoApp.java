@@ -1,15 +1,16 @@
 package ca.concordia.ece.sac.s4app.moviesreco;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.s4.base.Event;
 import org.apache.s4.base.GenericKeyFinder;
 import org.apache.s4.base.KeyFinder;
-import org.apache.s4.core.App;
-import org.apache.s4.core.RemoteStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,6 +25,7 @@ public class RecoApp extends App {
     static final private String recoStreamName = "MovieReco";
     static final private String mutualFansStreamName = "MutualFan";
     static final private String ratingStreamName = "RawRating";
+    private Properties settings = new Properties();
 
     private RemoteStream recoStream;
     private RemoteStream mutualFansStream;
@@ -37,18 +39,35 @@ public class RecoApp extends App {
     @Override
     protected void onInit() {
         try {
+            readConfig();
             prepare();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
+    private void readConfig() throws Exception {
+        File configFile = new File(System.getProperty("user.home")
+                + "/moviereco.properties");
+        if (!configFile.exists()) {
+            logger.error(
+                    "Cannot find moviereco.properties file in this location :[{}]. Make sure it is available at this place and includes oauth credentials",
+                    configFile.getAbsolutePath());
+            return;
+        }
+        settings.load(new FileInputStream(configFile));
+        logger.trace("Read moviereco.properties success. a={}",
+                settings.getProperty("moviereco.filepath.srcrating"));
+        // settings.getProperty("oauth.consumerKey")
+    }
+
     private void prepare() throws Exception {
         // uncomment the following in order to get metrics outputs in .csv files
-        // prepareMetricsOutputs();
+        prepareMetricsOutputs();
 
         RecoOutputPE outputPE = createPE(RecoOutputPE.class);
-        outputPE.setTimerInterval(10, TimeUnit.SECONDS);
+        outputPE.setTimerInterval(Integer.parseInt(settings
+                .getProperty("moviereco.output.interval")), TimeUnit.SECONDS);
 
         recoStream = createOutputStream(recoStreamName, new KeyFinder<Event>() {
 
@@ -83,14 +102,16 @@ public class RecoApp extends App {
 
     private void prepareMetricsOutputs() throws IOException {
         final Graphite graphite = new Graphite(new InetSocketAddress(
-                "10.1.1.2", 2003));
+                settings.getProperty("metrics.master"), 2003));
         final GraphiteReporter reporter = GraphiteReporter
                 .forRegistry(this.getMetricRegistry())
                 .prefixedWith("S4-" + getClusterName() + "-" + getPartitionId())
                 .convertRatesTo(TimeUnit.SECONDS)
                 .convertDurationsTo(TimeUnit.MILLISECONDS)
                 .filter(MetricFilter.ALL).build(graphite);
-        reporter.start(6, TimeUnit.SECONDS);
+        reporter.start(
+                Integer.parseInt(settings.getProperty("metrics.interval")),
+                TimeUnit.SECONDS);
     }
 
     @Override

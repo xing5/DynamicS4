@@ -5,9 +5,6 @@ import java.util.Map;
 import java.util.TreeSet;
 
 import org.apache.s4.base.Event;
-import org.apache.s4.core.App;
-import org.apache.s4.core.ProcessingElement;
-import org.apache.s4.core.RemoteStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,6 +16,8 @@ public class SimilarMoviesPE extends ProcessingElement {
     private static Logger logger = LoggerFactory
             .getLogger(SimilarMoviesPE.class);
     Map<String, Integer> similarMovies;
+    String lastReport = "";
+    boolean bGotEvents = false;
     transient RemoteStream downStream;
 
     public SimilarMoviesPE() {
@@ -39,6 +38,7 @@ public class SimilarMoviesPE extends ProcessingElement {
     }
 
     public void onEvent(Event event) {
+        bGotEvents = true;
         String strMovieId = event.get("mId2", String.class);
         logger.trace(
                 "movie [{}] received a mutual fan event from movie id [{}]",
@@ -56,15 +56,16 @@ public class SimilarMoviesPE extends ProcessingElement {
     }
 
     public void onTime() {
-
+        if (!bGotEvents) {
+            return;
+        }
+        bGotEvents = false;
         TreeSet<TopNEntry> sortedMovies = Sets.newTreeSet();
         for (Map.Entry<String, Integer> topMovie : similarMovies.entrySet()) {
             sortedMovies.add(new TopNEntry(topMovie.getKey(), topMovie
                     .getValue()));
         }
 
-        Event e = new Event();
-        e.put("mId", String.class, getId());
         String strTopList = "";
         int i = 0;
         Iterator<TopNEntry> iterator = sortedMovies.iterator();
@@ -78,8 +79,14 @@ public class SimilarMoviesPE extends ProcessingElement {
             }
             i++;
         }
-        e.put("top", String.class, strTopList);
-        downStream.put(e);
+
+        if (!strTopList.equals(lastReport)) {
+            Event e = new Event();
+            e.put("mId", String.class, getId());
+            e.put("top", String.class, strTopList);
+            downStream.put(e);
+            lastReport = strTopList;
+        }
     }
 
     @Override
