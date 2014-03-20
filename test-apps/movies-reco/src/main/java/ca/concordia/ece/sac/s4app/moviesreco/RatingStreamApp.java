@@ -109,12 +109,16 @@ public class RatingStreamApp extends AdapterApp {
                 while (true) {
                     String filename = settings
                             .getProperty("moviereco.filepath.srcrating");
-                    logger.trace("read file {}", filename);
+                    logger.error("read file {}", filename);
                     BufferedReader br = new BufferedReader(new FileReader(
                             filename));
                     String line = br.readLine();
 
+                    int i = 0;
                     while (line != null) {
+                        if (i++ % 100000 == 0) {
+                            logger.error("Reading line " + i);
+                        }
                         messageQueue.add(line);
                         srcSuccMeter.mark();
                         line = br.readLine();
