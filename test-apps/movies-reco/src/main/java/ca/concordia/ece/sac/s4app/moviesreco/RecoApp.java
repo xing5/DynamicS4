@@ -88,7 +88,10 @@ public class RecoApp extends App {
 
         SimilarMoviesPE similarPE = createPE(SimilarMoviesPE.class);
         similarPE.setDownstream(recoStream);
-        similarPE.setTimerInterval(10, TimeUnit.SECONDS);
+        similarPE
+                .setTimerInterval(Integer.parseInt(settings
+                        .getProperty("moviereco.similarpe.interval")),
+                        TimeUnit.SECONDS);
 
         KeyFinder<Event> kf = new GenericKeyFinder<Event>("mId", Event.class);
         mutualFansStream = createOutputStream(mutualFansStreamName, kf);
