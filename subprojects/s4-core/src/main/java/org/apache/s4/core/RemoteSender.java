@@ -49,7 +49,7 @@ public class RemoteSender {
             // round robin by default
             partition = Math.abs(targetPartition.incrementAndGet() % emitter.getPartitionCount());
         } else {
-            partition = (int) (hasher.hash(hashKey) % emitter.getPartitionCount());
+            partition = emitter.getPartitionByConsistentHashing(hashKey);
         }
         emitter.send(partition, message);
     }

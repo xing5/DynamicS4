@@ -38,6 +38,8 @@ public interface Emitter {
      *             if interrupted during blocking send operation
      */
     boolean send(int partitionId, ByteBuffer message) throws InterruptedException;
+    
+    int getPartitionByConsistentHashing(String key);
 
     int getPartitionCount();
 

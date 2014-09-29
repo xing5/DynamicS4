@@ -30,6 +30,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.s4.base.Emitter;
 import org.apache.s4.base.SerializerDeserializer;
+import org.apache.s4.comm.HashRing;
 import org.apache.s4.comm.serialize.SerializerDeserializerFactory;
 import org.apache.s4.comm.topology.Cluster;
 import org.apache.s4.comm.topology.ClusterChangeListener;
@@ -93,6 +94,10 @@ public class TCPEmitter implements Emitter, ClusterChangeListener {
      * Node hosting each partition
      */
     private final BiMap<Integer, ClusterNode> partitionNodeMap;
+    /*
+     * Consistent Hashing Ring
+     */
+    private final HashRing<ClusterNode, String> nodeRing;
 
     // lock for synchronizing between cluster updates callbacks and other code
     private final Lock lock;
@@ -129,6 +134,7 @@ public class TCPEmitter implements Emitter, ClusterChangeListener {
         int clusterSize = this.topology.getPhysicalCluster().getNodes().size();
         partitionChannelMap = HashBiMap.create(clusterSize);
         partitionNodeMap = HashBiMap.create(clusterSize);
+        nodeRing = new HashRing<ClusterNode, String>();
 
         // Initialize netty related structures
         ChannelFactory factory = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(),
@@ -208,6 +214,17 @@ public class TCPEmitter implements Emitter, ClusterChangeListener {
 
         c.write(buffer).addListener(new MessageSendingListener(partitionId));
     }
+    
+    public int getPartitionByConsistentHashing(String key) {
+    	ClusterNode node = nodeRing.get(key);
+    	if (node != null) {
+    		logger.debug(String.format("NodeRing size is %d. Get partition %d for key {%s}.", nodeRing.getNodes().size(), node.getPartition(), key));
+    		return node.getPartition();
+    	} else {
+    		logger.error("could not find node for key:"+key);
+    		return -1;
+    	}
+    }
 
     @Override
     public boolean send(int partitionId, ByteBuffer message) throws InterruptedException {
@@ -265,8 +282,10 @@ public class TCPEmitter implements Emitter, ClusterChangeListener {
                 ClusterNode oldNode = partitionNodeMap.remove(partition);
                 if (oldNode != null && !oldNode.equals(clusterNode)) {
                     removeChannel(partition);
+                    nodeRing.remove(oldNode);
                 }
                 partitionNodeMap.forcePut(partition, clusterNode);
+                nodeRing.add(clusterNode);
                 if (!writePermits.containsKey(partition)) {
                     writePermits.put(partition, new Semaphore(maxPendingWrites));
                 }

@@ -15,8 +15,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.s4.core;
+package org.apache.s4.comm;
 
+import java.io.UnsupportedEncodingException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -27,6 +30,9 @@ import java.util.NoSuchElementException;
 import java.util.TreeMap;
 
 import org.apache.s4.base.Hasher;
+import org.apache.s4.comm.tcp.TCPEmitter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.inject.Inject;
 
@@ -51,6 +57,7 @@ import com.google.inject.Inject;
  *
  */
 public class HashRing<Node, Resource> {
+    private static final Logger logger = LoggerFactory.getLogger(HashRing.class);
 
     public static int DEFAULT_WEIGHT = 200;
 
@@ -68,9 +75,32 @@ public class HashRing<Node, Resource> {
             return "Wrapper{" + "node=" + node + ", weight=" + weight + '}';
         }
     }
+    
+    public long hash(String hashKey) {
+    	byte[] digest = null;
+    	try {
+			MessageDigest md = MessageDigest.getInstance("SHA-256");
+			md.update(hashKey.getBytes("UTF-8"));
+			digest = md.digest();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} 
+    	
+        int b = 378551;
+        int a = 63689;
+        long hash = 0;
 
-    @Inject
-    private Hasher hasher;
+        for (int i = 0; i < digest.length; i++) {
+            hash = hash * a + (int)digest[i];
+            a = a * b;
+        }
+
+        return Math.abs(hash);
+    }
+
+    //@Inject 
+    //private Hasher hasher;
     
     private final TreeMap<Integer, Wrapper<Node>> ring = new TreeMap<Integer, Wrapper<Node>>();
     private final LinkedHashMap<Node, Wrapper<Node>> nodes = new LinkedHashMap<Node, Wrapper<Node>>();
@@ -130,7 +160,9 @@ public class HashRing<Node, Resource> {
         Wrapper<Node> wrapper = new Wrapper<Node>(node, weight);
         nodes.put(node, wrapper);
         for (int i = 0; i < wrapper.weight; i++) {
-            ring.put((int)hasher.hash(node.toString() + i), wrapper);
+        	int index = (int) hash(node.toString() + i);
+        	logger.debug("lvl[" + i +"] index["+index+"] + str(" + node.toString() +")");
+            ring.put((int)hash(node.toString() + i), wrapper);
         }
     }
 
@@ -152,7 +184,7 @@ public class HashRing<Node, Resource> {
         ring.clear();
         for (Wrapper<Node> w : nodes.values()) {
             for (int i = 0; i < w.weight; i++) {
-                ring.put((int)hasher.hash(w.node.toString() + i), w);
+                ring.put((int)hash(w.node.toString() + i), w);
             }
         }
         return true;
@@ -169,7 +201,7 @@ public class HashRing<Node, Resource> {
     /**
      * @return all the previously added nodes.
      */
-    List<Node> getNodes() {
+    public List<Node> getNodes() {
         return new ArrayList(nodes.keySet());
     }
 
@@ -254,7 +286,8 @@ public class HashRing<Node, Resource> {
         if (ring.isEmpty()) {
             return null;
         }
-        int hash = (int) hasher.hash(resource.toString());
+        int hash = (int) hash(resource.toString());
+        logger.debug(String.format("Key[%s] hash[%d]", resource.toString(), hash));
         Map.Entry<Integer, Wrapper<Node>> entry = ring.ceilingEntry(hash);
         if( entry == null ) {
             entry = ring.firstEntry();

@@ -52,7 +52,7 @@ public class TopicExtractorPE extends ProcessingElement {
 
     public void onEvent(Event event) {
         String text = event.get("statusText", String.class);
-        logger.trace("event text [{}]", text);
+        logger.debug("event text [{}]", text);
         if (!text.contains("#")) {
             return;
         }

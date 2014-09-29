@@ -108,7 +108,8 @@ public class SenderImpl implements Sender, ClusterChangeListener {
      */
     @Override
     public boolean checkAndSendIfNotLocal(String hashKey, Event event) {
-        int partition = (int) (hasher.hash(hashKey) % emitter.getPartitionCount());
+        //int partition = (int) (hasher.hash(hashKey) % emitter.getPartitionCount());
+        int partition = emitter.getPartitionByConsistentHashing(hashKey);
         if (partition == localPartitionId) {
             metrics.sentLocal();
             /* Hey we are in the same JVM, don't use the network. */

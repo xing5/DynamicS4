@@ -58,7 +58,7 @@ public class TopicCountAndReportPE extends DynamicProcessingElement {
             logger.info("Handling new topic [{}]", getId());
             firstEvent = false;
         }
-        //logger.info("Get new topic [{}], count [{}]", getId(), count);
+        logger.debug("Get new topic [{}], count [{}]", getId(), count);
         count += event.get("count", int.class);
         Event topicEvent = new Event();
         topicEvent.put("topic", String.class, getId());

@@ -19,12 +19,14 @@
 package org.apache.s4.example.twitter;
 
 import java.io.File;
+import java.util.List;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.TreeSet;
+import java.util.ArrayList;;
 
 import org.apache.s4.core.App;
 import org.apache.s4.base.Event;
@@ -33,6 +35,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Charsets;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
@@ -52,13 +55,14 @@ public class TopNTopicPE extends DynamicProcessingElement {
     }
 
     public void onEvent(Event event) {
-        //logger.debug("TopNTopicPE [" + getId() + "] receive event, topic: [{}] count: [{}]", event.get("topic", String.class), event.get("count", int.class));
+        logger.debug("TopNTopicPE [" + getId() + "] receive event, topic: [{}] count: [{}]", event.get("topic", String.class), event.get("count", int.class));
         countedTopics.put(event.get("topic", String.class), event.get("count", int.class));
     }
 
     public void onTime() {
-        TreeSet<TopNEntry> sortedTopics = Sets.newTreeSet();
+        ArrayList<TopNEntry> sortedTopics = Lists.newArrayList();
         for (Map.Entry<String, Integer> topicCount : countedTopics.entrySet()) {
+        	logger.debug(String.format("For output: (%s, %d)", topicCount.getKey(), topicCount.getValue()));
             sortedTopics.add(new TopNEntry(topicCount.getKey(), topicCount.getValue()));
         }
 
@@ -66,11 +70,12 @@ public class TopNTopicPE extends DynamicProcessingElement {
 
         StringBuilder sb = new StringBuilder();
         int i = 0;
+        Collections.sort(sortedTopics);
         Iterator<TopNEntry> iterator = sortedTopics.iterator();
         sb.append("----\n" + new SimpleDateFormat("yyyy-MMM-dd HH:mm:ss").format(new Date()) + "\n");
 
-        while (iterator.hasNext() && i < 10) {
-            TopNEntry entry = iterator.next();
+        while (i < sortedTopics.size() && i < 10) {
+            TopNEntry entry = sortedTopics.get(i);
             sb.append("topic [" + entry.topic + "] count [" + entry.count + "]\n");
             i++;
         }

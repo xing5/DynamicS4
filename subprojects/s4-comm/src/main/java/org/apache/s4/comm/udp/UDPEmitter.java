@@ -133,4 +133,10 @@ public class UDPEmitter implements Emitter, ClusterChangeListener {
         // TODO Auto-generated method stub
 
     }
+
+	@Override
+	public int getPartitionByConsistentHashing(String key) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
 }

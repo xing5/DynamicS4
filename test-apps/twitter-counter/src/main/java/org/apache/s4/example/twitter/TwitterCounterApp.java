@@ -80,7 +80,7 @@ public class TwitterCounterApp extends App {
     
     private void prepare() throws Exception{
             // uncomment the following in order to get metrics outputs in .csv files
-            prepareMetricsOutputs();
+//            prepareMetricsOutputs();
 
             TopNTopicPE topNTopicPE = createPE(TopNTopicPE.class);
             topNTopicPE.setTimerInterval(10, TimeUnit.SECONDS);
