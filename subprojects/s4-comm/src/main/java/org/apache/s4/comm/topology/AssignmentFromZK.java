@@ -190,53 +190,71 @@ public class AssignmentFromZK implements Assignment, IZkChildListener, IZkStateL
     private void tryToAcquiretask() {
         List<String> tasks = zkClient.getChildren(taskPath);
         List<String> processes = zkClient.getChildren(processPath);
+        String taskName="";
         // check if the number of process is less than tasks
         if (processes.size() < tasks.size()) {
             // if yes, go over the tasks
             for (int i = 0; i < tasks.size(); i++) {
-                String taskName = tasks.get(i);
+                taskName = tasks.get(i);
                 if (processes.contains(taskName)) {
                     continue;
                 }
-                if (!zkClient.exists(processPath + "/" + taskName)) {
-                    ZNRecord task = zkClient.readData(taskPath + "/" + taskName);
-                    ZNRecord process = new ZNRecord(task);
-                    process.putSimpleField("host", machineId);
-                    process.putSimpleField("session", String.valueOf(zkClient.getSessionId()));
-                    try {
-                        zkClient.createEphemeral(processPath + "/" + taskName, process);
+            }
+        } else {
+        	// add a new task
 
-                    } catch (Throwable e) {
-                        if (e instanceof ZkNodeExistsException) {
-                            logger.trace("Task already created");
-                        } else {
-                            logger.debug("Exception trying to acquire task:" + taskName
-                                    + " This is warning and can be ignored. " + e);
-                            // Any exception does not means we failed to acquire
-                            // task because we might have acquired task but there
-                            // was ZK connection loss
-                            // We will check again in the next section if we created
-                            // the process node successfully
-                        }
-                    }
-                    // check if the process node is created and we own it
-                    Stat stat = zkClient.getStat(processPath + "/" + taskName);
-                    if (stat != null && stat.getEphemeralOwner() == zkClient.getSessionId()) {
-                        logger.info("Successfully acquired task:" + taskName + " by " + machineId);
-                        int partition = Integer.parseInt(process.getSimpleField("partition"));
-                        String host = process.getSimpleField("host");
-                        int port = Integer.parseInt(process.getSimpleField("port"));
-                        String taskId = process.getSimpleField("taskId");
-                        ClusterNode node = new ClusterNode(partition, port, host, taskId);
-                        clusterNodeRef.set(node);
-                        currentlyOwningTask.set(true);
-                        taskAcquired.signalAll();
-                        break;
-                    }
-                }
-
+        	int i = tasks.size();
+            ZNRecord task = zkClient.readData(taskPath + "/" + tasks.get(i-1), true);
+            int port = 0;
+            if (task != null && task.getSimpleField("partition").equals(String.valueOf(i-1))) {
+                port = Integer.parseInt(task.getSimpleField("port"));
+                taskName = "Task-" + i;
+                ZNRecord record = new ZNRecord(taskName);
+                record.putSimpleField("taskId", taskName);
+                record.putSimpleField("port", String.valueOf(port + 1));
+                record.putSimpleField("partition", String.valueOf(i));
+                record.putSimpleField("cluster", this.clusterName);
+                zkClient.createPersistent(taskPath + "/" + taskName, record);
+            } else {
+            	logger.error("Increasing tasks failed.");
             }
         }
+        if (!zkClient.exists(processPath + "/" + taskName)) {
+            ZNRecord task = zkClient.readData(taskPath + "/" + taskName);
+            ZNRecord process = new ZNRecord(task);
+            process.putSimpleField("host", machineId);
+            process.putSimpleField("session", String.valueOf(zkClient.getSessionId()));
+            try {
+                zkClient.createEphemeral(processPath + "/" + taskName, process);
+
+            } catch (Throwable e) {
+                if (e instanceof ZkNodeExistsException) {
+                    logger.trace("Task already created");
+                } else {
+                    logger.debug("Exception trying to acquire task:" + taskName
+                            + " This is warning and can be ignored. " + e);
+                    // Any exception does not means we failed to acquire
+                    // task because we might have acquired task but there
+                    // was ZK connection loss
+                    // We will check again in the next section if we created
+                    // the process node successfully
+                }
+            }
+            // check if the process node is created and we own it
+            Stat stat = zkClient.getStat(processPath + "/" + taskName);
+            if (stat != null && stat.getEphemeralOwner() == zkClient.getSessionId()) {
+                logger.info("Successfully acquired task:" + taskName + " by " + machineId);
+                int partition = Integer.parseInt(process.getSimpleField("partition"));
+                String host = process.getSimpleField("host");
+                int port = Integer.parseInt(process.getSimpleField("port"));
+                String taskId = process.getSimpleField("taskId");
+                ClusterNode node = new ClusterNode(partition, port, host, taskId);
+                clusterNodeRef.set(node);
+                currentlyOwningTask.set(true);
+                taskAcquired.signalAll();
+            }
+        }
+
     }
 
     @Override
