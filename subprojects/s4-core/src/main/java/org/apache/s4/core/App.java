@@ -32,6 +32,7 @@ import org.apache.s4.base.Sender;
 import org.apache.s4.base.SerializerDeserializer;
 import org.apache.s4.comm.serialize.SerializerDeserializerFactory;
 import org.apache.s4.comm.topology.Cluster;
+import org.apache.s4.comm.topology.ClusterChangeListener;
 import org.apache.s4.comm.topology.RemoteStreams;
 import org.apache.s4.core.ft.CheckpointingFramework;
 import org.apache.s4.core.staging.StreamExecutorServiceFactory;
@@ -170,7 +171,9 @@ public abstract class App {
         for (Streamable<? extends Event> stream : getStreams()) {
             stream.start();
         }
-
+        
+        cluster.addListener(new ClusterResizeTransmission());
+        
         //
         // /* Allow abstract PE to initialize. */
         for (ProcessingElement pe : getPePrototypes()) {
@@ -574,5 +577,17 @@ public abstract class App {
                 }
             }
         }
+    }
+    
+    public class ClusterResizeTransmission implements ClusterChangeListener {
+
+		@Override
+		public void onChange() {
+			for (String streamName : streams.keySet()) {
+				Stream s = (Stream) streams.get(streamName);
+				s.remapPEsToNodes();
+			}
+		}
+    	
     }
 }

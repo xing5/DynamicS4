@@ -197,10 +197,10 @@ public class TCPEmitter implements Emitter, ClusterChangeListener {
         ChannelBuffer buffer = ChannelBuffers.wrappedBuffer(message);
 
         if (!partitionChannelMap.containsKey(partitionId)) {
-            if (!connectTo(partitionId)) {
-                logger.warn("Could not connect to partition {}, discarding message", partitionId);
-                // Couldn't connect, discard message
-                return;
+            while (!connectTo(partitionId)) {
+                logger.warn("Could not connect to partition {}, wait 3 seconds", partitionId);
+                // Couldn't connect, wait 3 seconds
+                Thread.sleep(3000);
             }
         }
 
@@ -272,6 +272,7 @@ public class TCPEmitter implements Emitter, ClusterChangeListener {
         lock.lock();
         try {
             logger.debug("refresh " + this.topology + ". {} by " + this, this.topology.getPhysicalCluster().getNodes());
+            nodeRing.clear();
             for (ClusterNode clusterNode : topology.getPhysicalCluster().getNodes()) {
                 Integer partition = clusterNode.getPartition();
                 if (partition == null) {
@@ -282,7 +283,6 @@ public class TCPEmitter implements Emitter, ClusterChangeListener {
                 ClusterNode oldNode = partitionNodeMap.remove(partition);
                 if (oldNode != null && !oldNode.equals(clusterNode)) {
                     removeChannel(partition);
-                    nodeRing.remove(oldNode);
                 }
                 partitionNodeMap.forcePut(partition, clusterNode);
                 nodeRing.add(clusterNode);

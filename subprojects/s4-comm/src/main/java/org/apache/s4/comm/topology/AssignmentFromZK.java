@@ -203,6 +203,7 @@ public class AssignmentFromZK implements Assignment, IZkChildListener, IZkStateL
         } else {
         	// add a new task
 
+        	logger.debug("try to create a new task");
         	int i = tasks.size();
             ZNRecord task = zkClient.readData(taskPath + "/" + tasks.get(i-1), true);
             int port = 0;
@@ -215,6 +216,8 @@ public class AssignmentFromZK implements Assignment, IZkChildListener, IZkStateL
                 record.putSimpleField("partition", String.valueOf(i));
                 record.putSimpleField("cluster", this.clusterName);
                 zkClient.createPersistent(taskPath + "/" + taskName, record);
+                logger.debug(String.format("Created a new task [%s] with paritition [%d] on cluster [%s], port [%s]",
+                		taskName, port + 1, this.clusterName, i));
             } else {
             	logger.error("Increasing tasks failed.");
             }

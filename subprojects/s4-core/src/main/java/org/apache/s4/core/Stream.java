@@ -19,6 +19,7 @@
 package org.apache.s4.core;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.concurrent.Executor;
 
 import org.apache.s4.base.Event;
@@ -33,6 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Maps;
 
 /**
  * {@link Stream} and {@link ProcessingElement} objects represent the links and nodes in the application graph. A stream
@@ -296,6 +298,22 @@ public class Stream<T extends Event> implements Streamable {
     public Stream<T> setParallelism(int parallelism) {
         this.parallelism = parallelism;
         return this;
+    }
+    
+    public void remapPEsToNodes() {
+    	for (int i = 0; i < targetPEs.length; i++) {
+    		for (ProcessingElement pe : targetPEs[i].getInstances()) {
+    			Event e = new Event();
+                e.setStreamId("TRANS@" + i + "@" + this.name);
+                logger.debug("new event : TRANS@" + i + "@" + this.name + " [id:" + pe.getId() + "]");
+                e.put(pe.getId(), String.class, new String(pe.serializeState()));
+    			boolean bIsRemote = sender.checkAndSendIfNotLocal(pe.getId(), e);
+    			// delete this PE
+    			if (bIsRemote) {
+    				pe.close();
+    			}
+    		}
+    	}
     }
 
     class StreamEventProcessingTask implements Runnable {

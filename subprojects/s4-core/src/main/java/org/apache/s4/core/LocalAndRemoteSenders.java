@@ -147,7 +147,8 @@ public class LocalAndRemoteSenders implements RemoteSenders {
         }
 
         RemoteEmitter rmEmitter = remoteEmitters.getEmitter(remoteClusters.getCluster(destClusterName));
-        int partition = (int) (hasher.hash(key) % rmEmitter.getPartitionCount());
+        //int partition = (int) (hasher.hash(key) % rmEmitter.getPartitionCount());
+        int partition = rmEmitter.getPartitionByConsistentHashing(key);
         Map<Integer, Event> peIndexEvent = eventCache.get(partition);
         if (peIndexEvent == null) {
             peIndexEvent = Maps.newHashMap();
