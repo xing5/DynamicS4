@@ -33,3 +33,11 @@ website/output
 website/tmp
 website/.sass-cache
 website/crash.log
+
+MovieReco.txt
+TopNTopics.txt
+metrics/
+*.log
+subprojects/s4-core/src/main/resources/logback.xmle
+subprojects/s4-ddm/src/test/
+subprojects/s4-tools/src/dist/
