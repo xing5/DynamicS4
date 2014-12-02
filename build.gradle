@@ -51,6 +51,7 @@ allprojects {
     }
 }
 
+
 /* All project libraries must be defined here. */
 project.ext["libraries"] = [
     guava:              'com.google.guava:guava:13.0.1',
@@ -89,7 +90,9 @@ project.ext["libraries"] = [
     gradle_tooling_api: 'org.gradle:gradle-tooling-api:1.4',
     gradle_wrapper:     'gradle-wrapper:gradle-wrapper:1.4',
     metrics_core:       'com.codahale.metrics:metrics-core:3.0.1',
-    metrics_graphite:   'com.codahale.metrics:metrics-graphite:3.0.1'
+    metrics_graphite:   'com.codahale.metrics:metrics-graphite:3.0.1',
+    aws_ec2:            'com.amazonaws:aws-java-sdk-ec2:1.9.8',
+    aws_core:           'com.amazonaws:aws-java-sdk-core:1.9.8',
 ]
 
 subprojects {

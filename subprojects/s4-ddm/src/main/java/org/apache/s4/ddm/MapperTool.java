@@ -65,6 +65,9 @@ public class MapperTool {
         if (mapperArgs.daemonParemeters != null && !mapperArgs.daemonParemeters.isEmpty()) {
             DoDoDaemon d = new DoDoDaemon(zkClient, mapperArgs.daemonParemeters);
             d.start();
+        } else if (mapperArgs.strInstanceId != null) {
+        	EC2Manager ec2 = new EC2Manager();
+        	ec2.startInstance(mapperArgs.strInstanceId);
         } else {
 
             System.out.println("The stream - cluster pairs: ");
@@ -115,6 +118,9 @@ public class MapperTool {
 
         @Parameter(names = "-d", description = "start daemon")
         String daemonParemeters = null;
+        
+        @Parameter(names = "-si", description = "start ec2 instance")
+        String strInstanceId = null;
     }
 
     static class Stream {
