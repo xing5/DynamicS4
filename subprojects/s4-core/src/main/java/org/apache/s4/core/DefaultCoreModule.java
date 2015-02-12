@@ -38,6 +38,8 @@ import org.apache.s4.core.staging.RemoteSendersExecutorServiceFactory;
 import org.apache.s4.core.staging.SenderExecutorServiceFactory;
 import org.apache.s4.core.staging.StreamExecutorServiceFactory;
 import org.apache.s4.core.staging.ThrottlingSenderExecutorServiceFactory;
+import org.apache.s4.core.staging.LoadSheddingSenderExecutorServiceFactory;
+import org.apache.s4.core.staging.LoadSheddingRemoteSendersExecutorServiceFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -88,8 +90,8 @@ public class DefaultCoreModule extends AbstractModule {
         bind(CheckpointingFramework.class).to(NoOpCheckpointingFramework.class);
 
         // shed load in local sender only by default
-        bind(SenderExecutorServiceFactory.class).to(ThrottlingSenderExecutorServiceFactory.class);
-        bind(RemoteSendersExecutorServiceFactory.class).to(BlockingRemoteSendersExecutorServiceFactory.class);
+        bind(SenderExecutorServiceFactory.class).to(LoadSheddingSenderExecutorServiceFactory.class);
+        bind(RemoteSendersExecutorServiceFactory.class).to(LoadSheddingRemoteSendersExecutorServiceFactory.class);
 
         bind(StreamExecutorServiceFactory.class).to(BlockingStreamExecutorServiceFactory.class);
 
