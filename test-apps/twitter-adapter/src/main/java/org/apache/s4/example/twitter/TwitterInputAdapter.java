@@ -205,7 +205,7 @@ public class TwitterInputAdapter extends AdapterApp {
     
     private int getZipfSample(ZipfDistribution zd, List<Integer> sampleList) {
     	int rst;
-    	if (sampleList.size() < 50000) {
+    	if (sampleList.size() < 5000) {
     		rst = zd.sample();
     		sampleList.add(rst);
     	} else {
