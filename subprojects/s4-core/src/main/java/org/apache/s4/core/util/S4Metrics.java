@@ -116,7 +116,7 @@ public class S4Metrics {
                             .build(new File(outputDir));
                     reporter.start(period, timeUnit);
                 } else if (group1.startsWith("graphite")) {
-                    final Graphite graphite = new Graphite(new InetSocketAddress("10.1.1.2", 2003));
+                    final Graphite graphite = new Graphite(new InetSocketAddress(group1.substring("graphite:".length()), 2003));
                     final GraphiteReporter reporter = GraphiteReporter.forRegistry(mr).prefixedWith("S4")
                             .convertRatesTo(TimeUnit.SECONDS).convertDurationsTo(TimeUnit.MILLISECONDS)
                             .filter(MetricFilter.ALL).build(graphite);

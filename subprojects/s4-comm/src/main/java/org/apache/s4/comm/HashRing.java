@@ -161,7 +161,7 @@ public class HashRing<Node, Resource> {
         nodes.put(node, wrapper);
         for (int i = 0; i < wrapper.weight; i++) {
         	int index = (int) hash(node.toString() + i);
-        	logger.debug("lvl[" + i +"] index["+index+"] + str(" + node.toString() +")");
+        	//logger.debug("lvl[" + i +"] index["+index+"] + str(" + node.toString() +")");
             ring.put((int)hash(node.toString() + i), wrapper);
         }
     }

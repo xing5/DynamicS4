@@ -19,9 +19,11 @@
 package org.apache.s4.example.twitter;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.FileUtils;
@@ -48,6 +50,8 @@ public class TwitterCounterApp extends App {
     static final private String aggregatedTopicStreamName = "AggregatedTopicSeen";
     static final private String topicSeenStreamName = "TopicSeen";
     static final private String rawInputStreamName = "RawStatus";
+    
+    private String graphiteServerIP;
     private RemoteStream aggregatedTopicStream;
     private RemoteStream topicSeenStream;
 
@@ -80,7 +84,8 @@ public class TwitterCounterApp extends App {
     
     private void prepare() throws Exception{
             // uncomment the following in order to get metrics outputs in .csv files
-//            prepareMetricsOutputs();
+    		loadSettings();
+            prepareMetricsOutputs();
 
             TopNTopicPE topNTopicPE = createPE(TopNTopicPE.class);
             topNTopicPE.setTimerInterval(10, TimeUnit.SECONDS);
@@ -121,9 +126,21 @@ public class TwitterCounterApp extends App {
             topicExtractorPE.setSingleton(true);
             prepareInputStream(rawInputStreamName, topicExtractorPE);
     }
+    
+    private void loadSettings() throws Exception {
+        File exprSettingFile = new File(System.getProperty("user.home") + "/expr.settings");
+        if (!exprSettingFile.exists()) {
+        	logger.error("Cannot find configuration file: ", exprSettingFile.getAbsolutePath());
+        	graphiteServerIP = "10.0.1.10";
+        } else {
+        	Properties exprSettings = new Properties();
+        	exprSettings.load(new FileInputStream(exprSettingFile));
+        	graphiteServerIP = exprSettings.getProperty("graphite.server.ip");
+        }
+    }
 
     private void prepareMetricsOutputs() throws IOException {
-        final Graphite graphite = new Graphite(new InetSocketAddress("10.1.1.2", 2003));
+        final Graphite graphite = new Graphite(new InetSocketAddress(graphiteServerIP, 2003));
         final GraphiteReporter reporter = GraphiteReporter.forRegistry(this.getMetricRegistry()).prefixedWith("S4-" + getClusterName()+ "-" + getPartitionId())
                 .convertRatesTo(TimeUnit.SECONDS).convertDurationsTo(TimeUnit.MILLISECONDS)
                 .filter(MetricFilter.ALL).build(graphite);

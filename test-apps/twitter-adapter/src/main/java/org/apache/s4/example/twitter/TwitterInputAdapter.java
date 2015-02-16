@@ -254,7 +254,7 @@ public class TwitterInputAdapter extends AdapterApp {
                     //logger.debug("try sending a event.");
                     //Status status = messageQueue.take();
                     String tweet = messageQueue.take();
-                    logger.debug("Sending event:" + tweet);
+                    //logger.debug("Sending event:" + tweet);
                     
                     Event event = new Event();
                     event.put("statusText", String.class, tweet);
