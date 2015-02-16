@@ -69,7 +69,6 @@ public class TwitterInputAdapter extends AdapterApp {
     private LinkedBlockingQueue<String> messageQueue = new LinkedBlockingQueue<String>();
 
     protected ServerSocket serverSocket;
-    transient private ScheduledExecutorService triggerTimer;
 
     private Thread t;
     private Thread srcStream;
@@ -95,22 +94,9 @@ public class TwitterInputAdapter extends AdapterApp {
         } catch (Exception e) {
             logger.error("Cannot start metrics");
         }
-        ThreadFactory threadFactory = new ThreadFactoryBuilder().setDaemon(true)
-                .setUncaughtExceptionHandler(new UncaughtExceptionHandler() {
-
-                    @Override
-                    public void uncaughtException(Thread t, Throwable e) {
-                        logger.error("Expection from timer thread", e);
-                    }
-                }).setNameFormat("Timer-" + getClass().getSimpleName()).build();
-        triggerTimer = Executors.newSingleThreadScheduledExecutor(threadFactory);
-
-        if (triggerTimer != null) {
-            triggerTimer.scheduleAtFixedRate(new OnTimeTask(), 0, 3, TimeUnit.SECONDS);
-        }
+        rateLimiter = RateLimiter.create(200000, 2, TimeUnit.HOURS);
         t = new Thread(new Dequeuer());
         srcStream = new Thread(new ProduceZipf());
-        rateLimiter = RateLimiter.create(1000);
     }
     
     private void loadSettings() throws Exception {
@@ -232,16 +218,6 @@ public class TwitterInputAdapter extends AdapterApp {
                     srcFailMeter.mark();
                 }
             }
-        }
-    }
-    
-
-
-    private class OnTimeTask extends TimerTask {
-
-        @Override
-        public void run() {
-        	rateLimiter.setRate(rateLimiter.getRate()+rateIncreasement);
         }
     }
 
