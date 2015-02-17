@@ -72,7 +72,6 @@ public class TwitterInputAdapter extends AdapterApp {
 
     private Thread t;
     private Thread srcStream;
-    private RateLimiter rateLimiter;
     ZipfDistribution zd = new ZipfDistribution(5000, 0.5);
     List<Integer> sampleList = new ArrayList<Integer>();
     
@@ -94,7 +93,6 @@ public class TwitterInputAdapter extends AdapterApp {
         } catch (Exception e) {
             logger.error("Cannot start metrics");
         }
-        rateLimiter = RateLimiter.create(200000, 2, TimeUnit.HOURS);
         t = new Thread(new Dequeuer());
         srcStream = new Thread(new ProduceZipf());
     }
@@ -205,9 +203,12 @@ public class TwitterInputAdapter extends AdapterApp {
         
         private final Meter srcSuccMeter = getMetricRegistry().meter(MetricRegistry.name("event-src", "succ"));
         private final Meter srcFailMeter = getMetricRegistry().meter(MetricRegistry.name("event-src", "fail"));
+
+        private final RateLimiter rateLimiter = RateLimiter.create(200000, 2, TimeUnit.HOURS);
         
         @Override
         public void run() {
+        	
             while (true) {
                 try {
                 	rateLimiter.acquire();
