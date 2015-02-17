@@ -71,7 +71,7 @@ public class TwitterInputAdapter extends AdapterApp {
     protected ServerSocket serverSocket;
 
     private Thread t;
-    private Thread srcStream;
+    private Thread srcStream, srcStream2;
     ZipfDistribution zd = new ZipfDistribution(5000, 0.5);
     List<Integer> sampleList = new ArrayList<Integer>();
     
@@ -95,6 +95,7 @@ public class TwitterInputAdapter extends AdapterApp {
         }
         t = new Thread(new Dequeuer());
         srcStream = new Thread(new ProduceZipf());
+        srcStream2= new Thread(new ProduceZipf());
     }
     
     private void loadSettings() throws Exception {
@@ -172,6 +173,7 @@ public class TwitterInputAdapter extends AdapterApp {
         try {
             t.start();
             srcStream.start();
+            srcStream2.start();
             //connectAndRead();
             
         } catch (Exception e) {
@@ -204,7 +206,7 @@ public class TwitterInputAdapter extends AdapterApp {
         private final Meter srcSuccMeter = getMetricRegistry().meter(MetricRegistry.name("event-src", "succ"));
         private final Meter srcFailMeter = getMetricRegistry().meter(MetricRegistry.name("event-src", "fail"));
 
-        private final RateLimiter rateLimiter = RateLimiter.create(200000, 2, TimeUnit.HOURS);
+        private final RateLimiter rateLimiter = RateLimiter.create(100000, 2, TimeUnit.HOURS);
         
         @Override
         public void run() {
