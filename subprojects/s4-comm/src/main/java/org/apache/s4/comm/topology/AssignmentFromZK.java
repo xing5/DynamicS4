@@ -196,16 +196,16 @@ public class AssignmentFromZK implements Assignment, IZkChildListener, IZkStateL
             // if yes, go over the tasks
             for (int i = 0; i < tasks.size(); i++) {
                 taskName = tasks.get(i);
-                if (processes.contains(taskName)) {
-                    continue;
+                if (!processes.contains(taskName)) {
+                    break;
                 }
             }
         } else {
         	// add a new task
-
         	logger.debug("try to create a new task");
         	int i = tasks.size();
-            ZNRecord task = zkClient.readData(taskPath + "/" + tasks.get(i-1), true);
+            taskName = "Task-" + String.valueOf(i-1);
+            ZNRecord task = zkClient.readData(taskPath + "/" + taskName, true);
             int port = 0;
             if (task != null && task.getSimpleField("partition").equals(String.valueOf(i-1))) {
                 port = Integer.parseInt(task.getSimpleField("port"));

@@ -204,7 +204,7 @@ public class TwitterInputAdapter extends AdapterApp {
         private final Meter srcSuccMeter = getMetricRegistry().meter(MetricRegistry.name("event-src", "succ"));
         private final Meter srcFailMeter = getMetricRegistry().meter(MetricRegistry.name("event-src", "fail"));
 
-        private final RateLimiter rateLimiter = RateLimiter.create(100000, 2, TimeUnit.HOURS);
+        private final RateLimiter rateLimiter = RateLimiter.create(20000, 200, TimeUnit.SECONDS);
         
         @Override
         public void run() {
