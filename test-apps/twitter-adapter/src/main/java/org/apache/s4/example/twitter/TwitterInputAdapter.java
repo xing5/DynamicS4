@@ -207,7 +207,7 @@ public class TwitterInputAdapter extends AdapterApp {
         private final Timer produceTimer = getMetricRegistry().timer(MetricRegistry.name("event-produce-cost"));
         private final Timer rateTimer = getMetricRegistry().timer(MetricRegistry.name("event-ratelimiter"));
         
-        private final RateLimiter rateLimiter = RateLimiter.create(200000, 2, TimeUnit.HOURS);
+        private final RateLimiter rateLimiter = RateLimiter.create(300000, 2, TimeUnit.HOURS);
         
         @Override
         public void run() {
