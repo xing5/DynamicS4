@@ -20,7 +20,7 @@ import com.beust.jcommander.internal.Maps;
 public class HealthStats {
     static Logger logger = LoggerFactory.getLogger(HealthStats.class);
 
-    private final static String statsUrl = "http://node-1.lan20.idsp.emulab.net:8080/render/?target=S4-cluster*.*.*-pe-processing-time.mean&target=S4-cluster*.*.*-pe-processing-time.m1_rate&format=csv&from=-5minutes";
+    private final static String statsUrl = "http://54.214.10.135/render/?target=S4-cluster*.*.*-pe-processing-time.mean&target=S4-cluster*.*.*-pe-processing-time.m1_rate&format=csv&from=-5minutes";
 
     public class PeLoadStat {
         PeLoadStat() {

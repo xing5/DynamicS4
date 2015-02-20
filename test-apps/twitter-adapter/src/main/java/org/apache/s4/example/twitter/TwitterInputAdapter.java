@@ -76,7 +76,7 @@ public class TwitterInputAdapter extends AdapterApp {
     ZipfDistribution zd = new ZipfDistribution(5000, 0.5);
     List<Integer> sampleList = new ArrayList<Integer>();
     ScheduledExecutorService timerService = Executors.newSingleThreadScheduledExecutor();
-    private RateLimiter rateLimiter = RateLimiter.create(1000);
+    private RateLimiter rateLimiter = RateLimiter.create(50);
     
     private int rateIncreasement;
     private String graphiteServerIP;
@@ -235,7 +235,7 @@ public class TwitterInputAdapter extends AdapterApp {
 
     class IncreaseLimit implements Runnable {
 
-    	private double newRate = 1000.0;
+    	private double newRate = 50.0;
     	
         @Override
         public void run() {
