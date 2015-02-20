@@ -75,6 +75,8 @@ public class TwitterInputAdapter extends AdapterApp {
     private Thread srcStream;
     ZipfDistribution zd = new ZipfDistribution(5000, 0.5);
     List<Integer> sampleList = new ArrayList<Integer>();
+    ScheduledExecutorService timerService = Executors.newSingleThreadScheduledExecutor();
+    private RateLimiter rateLimiter = RateLimiter.create(1000);
     
     private int rateIncreasement;
     private String graphiteServerIP;
@@ -94,6 +96,9 @@ public class TwitterInputAdapter extends AdapterApp {
         } catch (Exception e) {
             logger.error("Cannot start metrics");
         }
+
+        IncreaseLimit increaseLimit = new IncreaseLimit();
+        timerService.scheduleAtFixedRate(increaseLimit, 0, 3, TimeUnit.SECONDS);
         t = new Thread(new Dequeuer());
         srcStream = new Thread(new ProduceZipf());
     }
@@ -200,14 +205,13 @@ public class TwitterInputAdapter extends AdapterApp {
     	return rst;
     }
     
+    
     class ProduceZipf implements Runnable {
         
         private final Meter srcSuccMeter = getMetricRegistry().meter(MetricRegistry.name("event-src", "succ"));
         private final Meter srcFailMeter = getMetricRegistry().meter(MetricRegistry.name("event-src", "fail"));
         private final Timer produceTimer = getMetricRegistry().timer(MetricRegistry.name("event-produce-cost"));
         private final Timer rateTimer = getMetricRegistry().timer(MetricRegistry.name("event-ratelimiter"));
-        
-        private final RateLimiter rateLimiter = RateLimiter.create(400000, 2, TimeUnit.HOURS);
         
         @Override
         public void run() {
@@ -226,6 +230,17 @@ public class TwitterInputAdapter extends AdapterApp {
                     srcFailMeter.mark();
                 }
             }
+        }
+    }
+
+    class IncreaseLimit implements Runnable {
+
+    	private double newRate = 1000.0;
+    	
+        @Override
+        public void run() {
+        	newRate += rateIncreasement;
+        	rateLimiter.setRate(newRate);
         }
     }
 
