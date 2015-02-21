@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -16,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.beust.jcommander.internal.Maps;
+import com.beust.jcommander.internal.Sets;
 
 public class HealthStats {
     static Logger logger = LoggerFactory.getLogger(HealthStats.class);
@@ -55,9 +57,59 @@ public class HealthStats {
             return this.load > arg0.load ? 1 : this.load < arg0.load ? -1 : 0;
         }
     }
+    
+    class Decision {
+    	public String streamName;
+    	public String curCluster;
+    	public String destCluster;
+    	
+    	Decision(String s, String c1, String c2) {
+    		this.streamName = s;
+    		this.curCluster = c1;
+    		this.destCluster = c2;
+    	}
+
+        @Override
+        public int hashCode() {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + ((streamName == null) ? 0 : streamName.hashCode());
+            result = prime * result + ((curCluster == null) ? 0 : curCluster.hashCode());
+            result = prime * result + ((destCluster == null) ? 0 : destCluster.hashCode());
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj)
+                return true;
+            if (obj == null)
+                return false;
+            if (getClass() != obj.getClass())
+                return false;
+            Decision other = (Decision) obj;
+            if (streamName == null) {
+                if (other.streamName != null)
+                    return false;
+            } else if (!streamName.equals(other.streamName))
+                return false;
+            if (curCluster == null) {
+                if (other.curCluster != null)
+                    return false;
+            } else if (!curCluster.equals(other.curCluster))
+                return false;
+            if (destCluster == null) {
+                if (other.destCluster != null)
+                    return false;
+            } else if (!destCluster.equals(other.destCluster))
+                return false;
+            return true;
+        }
+    }
 
     // map<cluster, map<stream, s>>
     private Map<String, Map<String, List<PeLoadStat>>> mapStats = Maps.newHashMap();
+    private Set<Decision> decisions = Sets.newHashSet();
     List<ClusterStats> orderedClusters = new ArrayList<ClusterStats>();
     private double CORRELATION_THRESHOLD = 0.0;
     private double DIFFERENCE_THRESHOLD = 1000;
@@ -259,7 +311,7 @@ public class HealthStats {
                     + cluster1 + " num is " + getStreamNodesNum(cluster1, streamToBeMoved) + " and " + cluster2
                     + " num is " + getClusterNodesNum(cluster2), streamToBeMoved);
 
-            if (destLoad + averageLoad(list2) > CAPACITY_THRESHOLD) {
+            if (destLoad + averageLoad(list2) > CAPACITY_THRESHOLD || decisions.contains(new Decision(streamToBeMoved, cluster2, cluster1))) {
                 logger.debug("Decision: do not move {} to {} because it will be overload", streamToBeMoved, cluster2);
                 return;
             }
@@ -270,6 +322,7 @@ public class HealthStats {
                 pm.clusterMap.put(streamToBeMoved, tmpMap);
             }
             tmpMap.put(cluster2, new StreamFlow(cluster2));
+            decisions.add(new Decision(streamToBeMoved, cluster1, cluster2));
         }
     }
 
