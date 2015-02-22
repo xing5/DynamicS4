@@ -372,14 +372,6 @@ public class HealthStats {
 
             if (destLoad + averageLoad(list2) > CAPACITY_THRESHOLD || decisions.contains(new Decision(streamToBeMoved, cluster2, cluster1))) {
                 logger.debug("Decision: do not move {} to {} because it will be overload", streamToBeMoved, cluster2);
-                logger.error("launch a instance for ", cluster1);
-                this.launchInstance(cluster1);
-                try {
-					Thread.sleep(60*2*1000);
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
                 return;
             }
             
@@ -391,6 +383,15 @@ public class HealthStats {
             }
             tmpMap.put(cluster2, new StreamFlow(cluster2));
             decisions.add(new Decision(streamToBeMoved, cluster1, cluster2));
+        } else if (averageLoad(list1) > DIFFERENCE_THRESHOLD) {
+            logger.error("launch a instance for ", cluster1);
+            this.launchInstance(cluster1);
+            try {
+				Thread.sleep(60*2*1000);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
         }
     }
 
