@@ -41,19 +41,23 @@ public class HealthStats {
     		logger.error("maximum instances reached");
     		return;
     	}
-    	List<String> ins;
     	if (clusterName.equals("cluster1")) {
-    		ins = instancesCluster1;
+        	if (instancesCluster1.size() <= 0) {
+        		logger.error("no more instances to launch: ", clusterName);
+        		return;
+        	}
+        	ec2m.startInstance(instancesCluster1.get(0));
+        	instancesCluster1.remove(0);
+        	totalLaunched++;
     	} else {
-    		ins = instancesCluster3;
+        	if (instancesCluster3.size() <= 0) {
+        		logger.error("no more instances to launch: ", clusterName);
+        		return;
+        	}
+        	ec2m.startInstance(instancesCluster3.get(0));
+        	instancesCluster3.remove(0);
+        	totalLaunched++;
     	}
-    	if (ins.size() <= 0) {
-    		logger.error("no more instances to launch: ", clusterName);
-    		return;
-    	}
-    	ec2m.startInstance(ins.get(0));
-    	ins.remove(0);
-    	totalLaunched++;
     }
     
     private void loadSettings() throws Exception {
