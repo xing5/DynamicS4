@@ -1,17 +1,24 @@
 package org.apache.s4.ddm;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import net.jcip.annotations.ThreadSafe;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,9 +28,49 @@ import com.beust.jcommander.internal.Sets;
 
 public class HealthStats {
     static Logger logger = LoggerFactory.getLogger(HealthStats.class);
+    
+    List<String> instancesCluster1;
+    List<String> instancesCluster3;
+    int totalLaunched = 0;
+    EC2Manager ec2m;
 
     private final static String statsUrl = "http://54.214.10.135/render/?target=S4-cluster*.*.*-pe-processing-time.mean&target=S4-cluster*.*.*-pe-processing-time.m1_rate&format=csv&from=-5minutes";
 
+    private void launchInstance(String clusterName) {
+    	if (totalLaunched >= 13) {
+    		logger.error("maximum instances reached");
+    		return;
+    	}
+    	List<String> ins;
+    	if (clusterName.equals("cluster1")) {
+    		ins = instancesCluster1;
+    	} else {
+    		ins = instancesCluster3;
+    	}
+    	if (ins.size() <= 0) {
+    		logger.error("no more instances to launch: ", clusterName);
+    		return;
+    	}
+    	ec2m.startInstance(ins.get(0));
+    	ins.remove(0);
+    	totalLaunched++;
+    }
+    
+    private void loadSettings() throws Exception {
+    	ec2m = new EC2Manager();
+        File exprSettingFile = new File(System.getProperty("user.home") + "/expr.settings");
+        if (!exprSettingFile.exists()) {
+        	logger.error("Cannot find configuration file: ", exprSettingFile.getAbsolutePath());
+        } else {
+        	Properties exprSettings = new Properties();
+        	exprSettings.load(new FileInputStream(exprSettingFile));
+        	String c1 = exprSettings.getProperty("cluster1.instances");
+        	String c3 = exprSettings.getProperty("cluster3.instances");
+        	instancesCluster1 = Arrays.asList(c1.split(","));
+        	instancesCluster3 = Arrays.asList(c3.split(","));
+        }
+    }
+    
     public class PeLoadStat {
         PeLoadStat() {
             eventsCount = 0;
@@ -116,6 +163,12 @@ public class HealthStats {
     private double CAPACITY_THRESHOLD = 1000;
 
     public HealthStats() {
+    	try {
+			loadSettings();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
     }
 
     public HealthStats(double... para) {
@@ -125,6 +178,12 @@ public class HealthStats {
         if (para.length > 1) {
             DIFFERENCE_THRESHOLD = para[1];
         }
+        try {
+			loadSettings();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
     }
 
     private double getStreamNodesNum(String clusterName, String streamName) {
@@ -313,8 +372,17 @@ public class HealthStats {
 
             if (destLoad + averageLoad(list2) > CAPACITY_THRESHOLD || decisions.contains(new Decision(streamToBeMoved, cluster2, cluster1))) {
                 logger.debug("Decision: do not move {} to {} because it will be overload", streamToBeMoved, cluster2);
+                logger.error("launch a instance for ", cluster1);
+                this.launchInstance(cluster1);
+                try {
+					Thread.sleep(60*2*1000);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
                 return;
             }
+            
             logger.debug("Decision: move {} to {}", streamToBeMoved, cluster2);
             Map<String, StreamFlow> tmpMap = pm.clusterMap.get(streamToBeMoved);
             if (tmpMap == null) {
