@@ -90,8 +90,8 @@ public class DefaultCoreModule extends AbstractModule {
         bind(CheckpointingFramework.class).to(NoOpCheckpointingFramework.class);
 
         // shed load in local sender only by default
-        bind(SenderExecutorServiceFactory.class).to(LoadSheddingSenderExecutorServiceFactory.class);
-        bind(RemoteSendersExecutorServiceFactory.class).to(LoadSheddingRemoteSendersExecutorServiceFactory.class);
+        bind(SenderExecutorServiceFactory.class).to(BlockingRemoteSendersExecutorServiceFactory.class);
+        bind(RemoteSendersExecutorServiceFactory.class).to(BlockingRemoteSendersExecutorServiceFactory.class);
 
         bind(StreamExecutorServiceFactory.class).to(BlockingStreamExecutorServiceFactory.class);
 
