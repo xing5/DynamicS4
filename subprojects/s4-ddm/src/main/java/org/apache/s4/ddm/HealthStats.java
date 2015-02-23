@@ -47,8 +47,9 @@ public class HealthStats {
         		return;
         	}
         	ec2m.startInstance(instancesCluster1.get(0));
-        	logger.debug("size of standby1: " + instancesCluster1.size());
+        	logger.error("instance of cluster1 started!");
         	instancesCluster1.remove(0);
+        	logger.error("size of standby1: " + instancesCluster1.size());
         	totalLaunched++;
     	} else {
         	if (instancesCluster3.size() <= 0) {
@@ -56,8 +57,9 @@ public class HealthStats {
         		return;
         	}
         	ec2m.startInstance(instancesCluster3.get(0));
+        	logger.error("instance of cluster3 started!");
         	instancesCluster3.remove(0);
-        	logger.debug("size of standby3: " + instancesCluster3.size());
+        	logger.error("size of standby3: " + instancesCluster3.size());
         	totalLaunched++;
     	}
     }
