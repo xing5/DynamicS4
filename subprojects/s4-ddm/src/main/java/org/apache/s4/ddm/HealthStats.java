@@ -387,7 +387,10 @@ public class HealthStats {
             }
             tmpMap.put(cluster2, new StreamFlow(cluster2));
             decisions.add(new Decision(streamToBeMoved, cluster1, cluster2));
-        } else if (averageLoad(list1) > DIFFERENCE_THRESHOLD) {
+            return;
+        }
+        
+        if (averageLoad(list1) > DIFFERENCE_THRESHOLD) {
             logger.error("launch a instance for ", cluster1);
             this.launchInstance(cluster1);
             try {
