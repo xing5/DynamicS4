@@ -33,6 +33,8 @@ public class DoDoDaemon {
                 if (pm != null) {
                     pm.applyToZooKeeper(zk);
                     Thread.sleep(10 * 60 * 1000);
+                } else {
+                	h.checkClusters();
                 }
             } catch (Exception e) {
                 System.out.println("error:" + e.getMessage());
