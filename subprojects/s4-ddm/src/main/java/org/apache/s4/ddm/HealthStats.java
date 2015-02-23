@@ -43,19 +43,21 @@ public class HealthStats {
     	}
     	if (clusterName.equals("cluster1")) {
         	if (instancesCluster1.size() <= 0) {
-        		logger.error("no more instances to launch: ", clusterName);
+        		logger.error("no more instances to launch: {}", clusterName);
         		return;
         	}
         	ec2m.startInstance(instancesCluster1.get(0));
+        	logger.debug("size of standby1: " + instancesCluster1.size());
         	instancesCluster1.remove(0);
         	totalLaunched++;
     	} else {
         	if (instancesCluster3.size() <= 0) {
-        		logger.error("no more instances to launch: ", clusterName);
+        		logger.error("no more instances to launch: {}", clusterName);
         		return;
         	}
         	ec2m.startInstance(instancesCluster3.get(0));
         	instancesCluster3.remove(0);
+        	logger.debug("size of standby3: " + instancesCluster3.size());
         	totalLaunched++;
     	}
     }

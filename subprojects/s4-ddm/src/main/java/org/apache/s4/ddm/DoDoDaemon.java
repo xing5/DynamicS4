@@ -10,12 +10,13 @@ import org.slf4j.LoggerFactory;
 public class DoDoDaemon {
     static Logger logger = LoggerFactory.getLogger(DoDoDaemon.class);
     final private Timer triggerTimer;
-    HealthStats h = new HealthStats();
+    HealthStats h;
     ZkClient zk = null;
 
     public DoDoDaemon(ZkClient zkClient, String paras) {
         triggerTimer = new Timer();
         zk = zkClient;
+        h = new HealthStats();
     }
 
     private class OnTimeTask extends TimerTask {
