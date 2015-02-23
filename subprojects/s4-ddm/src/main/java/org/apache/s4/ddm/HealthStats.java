@@ -382,19 +382,8 @@ public class HealthStats {
             }
             tmpMap.put(cluster2, new StreamFlow(cluster2));
             decisions.add(new Decision(streamToBeMoved, cluster1, cluster2));
-            return;
         }
         
-        if (averageLoad(list1) > DIFFERENCE_THRESHOLD) {
-            logger.error("launch a instance for cluster: " + cluster1);
-            this.launchInstance(cluster1);
-            try {
-				Thread.sleep(60*2*1000);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-        }
     }
 
     public PEClusterMapper analyze() {
@@ -421,6 +410,24 @@ public class HealthStats {
         for (ClusterStats s : orderedClusters) {
             System.out.println(s.name + " - " + s.load);
         }
+    }
+    
+    public void checkClusters() {
+    	boolean bWait = false;
+        for (ClusterStats s : orderedClusters) {
+            if (s.load > DIFFERENCE_THRESHOLD) {
+                logger.error("launch a instance for cluster: " + s.name);
+                this.launchInstance(s.name);
+                bWait = true;
+            }
+        }
+        if (!bWait) return;
+        try {
+			Thread.sleep(60*2*1000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
     }
 
     public void initData() throws IOException {
