@@ -158,6 +158,7 @@ public class HashRing<Node, Resource> {
         }
 
         Wrapper<Node> wrapper = new Wrapper<Node>(node, weight);
+        logger.debug("HashRing add node: " + node.toString());
         nodes.put(node, wrapper);
         for (int i = 0; i < wrapper.weight; i++) {
         	int index = (int) hash(node.toString() + i);
