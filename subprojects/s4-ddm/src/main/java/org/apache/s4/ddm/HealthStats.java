@@ -29,38 +29,29 @@ import com.beust.jcommander.internal.Sets;
 public class HealthStats {
     static Logger logger = LoggerFactory.getLogger(HealthStats.class);
     
-    List<String> instancesCluster1;
-    List<String> instancesCluster3;
-    int totalLaunched = 0;
+    String[] instancesCluster1;
+    String[] instancesCluster3;
+    static int c1Index = 0;
+    static int c3Index = 0;
     EC2Manager ec2m;
 
     private final static String statsUrl = "http://10.255.40.96/render/?target=S4-cluster*.*.*-pe-processing-time.mean&target=S4-cluster*.*.*-pe-processing-time.m1_rate&format=csv&from=-5minutes";
 
     private void launchInstance(String clusterName) {
-    	if (totalLaunched >= 13) {
-    		logger.error("maximum instances reached");
-    		return;
-    	}
     	if (clusterName.equals("cluster1")) {
-        	if (instancesCluster1.size() <= 0) {
+        	if (c1Index >= instancesCluster1.length) {
         		logger.error("no more instances to launch: {}", clusterName);
         		return;
         	}
-        	ec2m.startInstance(instancesCluster1.get(0));
-        	logger.error("instance of cluster1 started!");
-        	instancesCluster1.remove(0);
-        	logger.error("size of standby1: " + instancesCluster1.size());
-        	totalLaunched++;
+        	ec2m.startInstance(instancesCluster1[c1Index++]);
+        	logger.error("instance of cluster1 started! " + c1Index);
     	} else {
-        	if (instancesCluster3.size() <= 0) {
+        	if (c3Index >= instancesCluster3.length) {
         		logger.error("no more instances to launch: {}", clusterName);
         		return;
         	}
-        	ec2m.startInstance(instancesCluster3.get(0));
-        	logger.error("instance of cluster3 started!");
-        	instancesCluster3.remove(0);
-        	logger.error("size of standby3: " + instancesCluster3.size());
-        	totalLaunched++;
+        	ec2m.startInstance(instancesCluster3[c3Index++]);
+        	logger.error("instance of cluster3 started! " + c3Index);
     	}
     }
     
@@ -74,8 +65,8 @@ public class HealthStats {
         	exprSettings.load(new FileInputStream(exprSettingFile));
         	String c1 = exprSettings.getProperty("cluster1.instances");
         	String c3 = exprSettings.getProperty("cluster3.instances");
-        	instancesCluster1 = Arrays.asList(c1.split(","));
-        	instancesCluster3 = Arrays.asList(c3.split(","));
+        	instancesCluster1 = c1.split(",");
+        	instancesCluster3 = c3.split(",");
         }
     }
     
