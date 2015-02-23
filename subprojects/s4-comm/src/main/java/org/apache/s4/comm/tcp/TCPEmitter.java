@@ -202,10 +202,10 @@ public class TCPEmitter implements Emitter, ClusterChangeListener {
         ChannelBuffer buffer = ChannelBuffers.wrappedBuffer(message);
 
         if (!partitionChannelMap.containsKey(partitionId)) {
-            while (!connectTo(partitionId)) {
+            if (!connectTo(partitionId)) {
                 logger.warn("Could not connect to partition {}, wait 3 seconds", partitionId);
-                // Couldn't connect, wait 3 seconds
-                Thread.sleep(3000);
+                // Couldn't connect, discard message
+                return;
             }
         }
 
