@@ -194,6 +194,11 @@ public class TCPEmitter implements Emitter, ClusterChangeListener {
     }
 
     private void sendMessage(int partitionId, ByteBuffer message) throws InterruptedException {
+    	if (partitionId == -1) {
+    		logger.error("no nodes to send the message.");
+    		return;
+    	}
+    	
         ChannelBuffer buffer = ChannelBuffers.wrappedBuffer(message);
 
         if (!partitionChannelMap.containsKey(partitionId)) {
