@@ -34,6 +34,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.Semaphore;
 
 import org.apache.s4.base.Event;
 import org.apache.s4.base.util.S4MetricsRegistry;
