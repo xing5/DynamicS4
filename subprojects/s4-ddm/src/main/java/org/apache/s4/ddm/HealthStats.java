@@ -38,6 +38,10 @@ public class HealthStats {
     private final static String statsUrl = "http://10.255.40.96/render/?target=S4-cluster*.*.*-pe-processing-time.mean&target=S4-cluster*.*.*-pe-processing-time.m1_rate&format=csv&from=-5minutes";
 
     private void launchInstance(String clusterName) {
+    	if (c1Index + c3Index >= 13) {
+    		logger.error("reached capacity!");
+    		return;
+    	}
     	if (clusterName.equals("cluster1")) {
         	if (c1Index >= instancesCluster1.length) {
         		logger.error("no more instances to launch: {}", clusterName);
