@@ -77,7 +77,7 @@ public class TwitterInputAdapter extends AdapterApp {
     List<Integer> sampleList = new ArrayList<Integer>();
     ScheduledExecutorService timerService = Executors.newSingleThreadScheduledExecutor();
     private RateLimiter rateLimiter = RateLimiter.create(50);
-    priavate Semaphore queuePermit = new Semaphore(200000);
+    private Semaphore queuePermit = new Semaphore(200000);
     
     private int rateIncreasement;
     private String graphiteServerIP;
