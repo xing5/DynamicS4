@@ -501,6 +501,7 @@ public class HealthStats {
                     tmp.procRound++;
                 } catch (NumberFormatException e) {
                     tmp.procTime = 0.0;
+                    tmp.procRound--;
                 }
                 if (tmp.procTime != 0.0) {
                     bAllZero = false;
@@ -512,6 +513,7 @@ public class HealthStats {
                     tmp.eventsRound++;
                 } catch (NumberFormatException e) {
                     tmp.eventsCount = 0;
+                    tmp.eventsRound--;
                 }
                 if (tmp.eventsCount != 0) {
                     bAllZero = false;
