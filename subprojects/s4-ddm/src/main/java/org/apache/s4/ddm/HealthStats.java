@@ -393,7 +393,7 @@ public class HealthStats {
         }
         
         if (averageLoad(list1) > DIFFERENCE_THRESHOLD) {
-            logger.error("launch a instance for ", cluster1);
+            logger.error("launch a instance for cluster: " + cluster1);
             this.launchInstance(cluster1);
             try {
 				Thread.sleep(60*2*1000);
