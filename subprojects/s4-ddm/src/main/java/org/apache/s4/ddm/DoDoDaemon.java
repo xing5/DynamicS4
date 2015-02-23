@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 public class DoDoDaemon {
     static Logger logger = LoggerFactory.getLogger(DoDoDaemon.class);
     final private Timer triggerTimer;
+    HealthStats h = new HealthStats();
     ZkClient zk = null;
 
     public DoDoDaemon(ZkClient zkClient, String paras) {
@@ -22,7 +23,6 @@ public class DoDoDaemon {
         @Override
         public void run() {
             System.out.println("Hi!");
-            HealthStats h = new HealthStats();
             try {
                 h.initData();
                 h.printData();

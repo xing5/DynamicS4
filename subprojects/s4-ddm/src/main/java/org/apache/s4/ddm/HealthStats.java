@@ -426,6 +426,8 @@ public class HealthStats {
     }
 
     public void initData() throws IOException {
+        mapStats.clear();
+        orderedClusters.clear();
         URL url = new URL(statsUrl);
         URLConnection connection = url.openConnection();
         InputStreamReader stream = new InputStreamReader(connection.getInputStream());
