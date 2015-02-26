@@ -35,7 +35,7 @@ public class HealthStats {
     static int c3Index = 0;
     EC2Manager ec2m;
 
-    private final static String statsUrl = "http://10.255.40.96/render/?target=S4-cluster*.*.*-pe-processing-time.mean&target=S4-cluster*.*.*-pe-processing-time.m1_rate&format=csv&from=-5minutes";
+    private final static String statsUrl = "http://10.254.8.189/render/?target=S4-cluster*.*.*-pe-processing-time.mean&target=S4-cluster*.*.*-pe-processing-time.m1_rate&format=csv&from=-5minutes";
 
     private void launchInstance(String clusterName) {
     	if (c1Index + c3Index >= 13) {
