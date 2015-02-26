@@ -101,7 +101,7 @@ public class TwitterInputAdapter extends AdapterApp {
 
         IncreaseLimit increaseLimit = new IncreaseLimit();
         timerService.scheduleAtFixedRate(increaseLimit, 0, 3, TimeUnit.SECONDS);
-        //t = new Thread(new Dequeuer());
+        t = new Thread(new Dequeuer());
         srcStream = new Thread(new ProduceZipf());
     }
     
