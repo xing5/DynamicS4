@@ -263,7 +263,6 @@ public class TwitterInputAdapter extends AdapterApp {
                     Event event = new Event();
                     event.put("statusText", String.class, tweet);
                     getRemoteStream().put(event);
-                    queuePermit.release();
                 } catch (Exception e) {
 
                 }
